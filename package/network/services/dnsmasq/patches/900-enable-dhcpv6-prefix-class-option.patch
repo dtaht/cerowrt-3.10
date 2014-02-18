@@ -1,0 +1,27 @@
+From d5eb7a0795485a105a72b27ad2dffb8e3d6c442f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Dave=20T=C3=A4ht?= <dave.taht@bufferbloat.net>
+Date: Sun, 19 May 2013 15:06:03 -0700
+Subject: [PATCH] enable dhcpv6 prefix-class option
+
+Note: IANA has not allocated an official number. The homenet group
+is using 200 as theirs, temporarily.
+---
+ src/dhcp6-protocol.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/dhcp6-protocol.h b/src/dhcp6-protocol.h
+index 50d84a9..2aac166 100644
+--- a/src/dhcp6-protocol.h
++++ b/src/dhcp6-protocol.h
+@@ -61,7 +61,7 @@
+ 
+ /* replace this with the real number when allocated.
+    defining this also enables the relevant code. */ 
+-/* #define OPTION6_PREFIX_CLASS    99 */
++#define OPTION6_PREFIX_CLASS    200
+ 
+ 
+ #define DHCP6SUCCESS     0
+-- 
+1.7.9.5
+
