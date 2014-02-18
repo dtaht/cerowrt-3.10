@@ -1,0 +1,28 @@
+From b5178d0126b87d3793a677bb8bad026b821957d5 Mon Sep 17 00:00:00 2001
+From: Dave Taht <dave.taht@bufferbloat.net>
+Date: Sat, 19 Oct 2013 18:09:17 -0700
+Subject: [PATCH] mips: mainline linux doesnt have prid_imp_mask
+
+---
+ arch/mips/include/asm/timex.h |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/mips/include/asm/timex.h b/arch/mips/include/asm/timex.h
+index 1fb165f..6601ccc 100644
+--- a/arch/mips/include/asm/timex.h
++++ b/arch/mips/include/asm/timex.h
+@@ -38,6 +38,11 @@
+ 
+ typedef unsigned int cycles_t;
+ 
++/* Mainline linux doesn't have PRID_COMP_MASK or PRID_IMP_MASK */
++
++#define PRID_COMP_MASK 0x00ff0000
++#define PRID_IMP_MASK 0x0000ff00
++
+ /*
+  * On R4000/R4400 before version 5.0 an erratum exists such that if the
+  * cycle counter is read in the exact moment that it is matching the
+-- 
+1.7.9.5
+

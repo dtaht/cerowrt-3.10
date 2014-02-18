@@ -1,0 +1,90 @@
+From e4e35c9ea9893df758bb24a0027f018a5427e39d Mon Sep 17 00:00:00 2001
+From: Theodore Ts'o <tytso@mit.edu>
+Date: Sat, 21 Sep 2013 13:58:22 -0400
+Subject: [PATCH 1/2] random: allow architectures to optionally define
+ random_get_entropy()
+
+Allow architectures which have a disabled get_cycles() function to
+provide a random_get_entropy() function which provides a fine-grained,
+rapidly changing counter that can be used by the /dev/random driver.
+
+For example, an architecture might have a rapidly changing register
+used to control random TLB cache eviction, or DRAM refresh that
+doesn't meet the requirements of get_cycles(), but which is good
+enough for the needs of the random driver.
+
+Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
+Cc: stable@vger.kernel.org
+---
+ drivers/char/random.c |    8 ++++----
+ include/linux/timex.h |   14 ++++++++++++++
+ 2 files changed, 18 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/char/random.c b/drivers/char/random.c
+index 81eefa1..5c4626a 100644
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
+@@ -643,7 +643,7 @@ struct timer_rand_state {
+  */
+ void add_device_randomness(const void *buf, unsigned int size)
+ {
+-	unsigned long time = get_cycles() ^ jiffies;
++	unsigned long time = random_get_entropy() ^ jiffies;
+ 
+ 	mix_pool_bytes(&input_pool, buf, size, NULL);
+ 	mix_pool_bytes(&input_pool, &time, sizeof(time), NULL);
+@@ -680,7 +680,7 @@ static void add_timer_randomness(struct timer_rand_state *state, unsigned num)
+ 		goto out;
+ 
+ 	sample.jiffies = jiffies;
+-	sample.cycles = get_cycles();
++	sample.cycles = random_get_entropy();
+ 	sample.num = num;
+ 	mix_pool_bytes(&input_pool, &sample, sizeof(sample), NULL);
+ 
+@@ -747,7 +747,7 @@ void add_interrupt_randomness(int irq, int irq_flags)
+ 	struct fast_pool	*fast_pool = &__get_cpu_var(irq_randomness);
+ 	struct pt_regs		*regs = get_irq_regs();
+ 	unsigned long		now = jiffies;
+-	__u32			input[4], cycles = get_cycles();
++	__u32			input[4], cycles = random_get_entropy();
+ 
+ 	input[0] = cycles ^ jiffies;
+ 	input[1] = irq;
+@@ -1485,7 +1485,7 @@ unsigned int get_random_int(void)
+ 
+ 	hash = get_cpu_var(get_random_int_hash);
+ 
+-	hash[0] += current->pid + jiffies + get_cycles();
++	hash[0] += current->pid + jiffies + random_get_entropy();
+ 	md5_transform(hash, random_int_secret);
+ 	ret = hash[0];
+ 	put_cpu_var(get_random_int_hash);
+diff --git a/include/linux/timex.h b/include/linux/timex.h
+index dd3edd7..9d3f1a5 100644
+--- a/include/linux/timex.h
++++ b/include/linux/timex.h
+@@ -64,6 +64,20 @@
+ 
+ #include <asm/timex.h>
+ 
++#ifndef random_get_entropy
++/*
++ * The random_get_entropy() function is used by the /dev/random driver
++ * in order to extract entropy via the relative unpredictability of
++ * when an interrupt takes places versus a high speed, fine-grained
++ * timing source or cycle counter.  Since it will be occurred on every
++ * single interrupt, it must have a very low cost/overhead.
++ *
++ * By default we use get_cycles() for this purpose, but individual
++ * architectures may override this in their asm/timex.h header file.
++ */
++#define random_get_entropy()	get_cycles()
++#endif
++
+ /*
+  * SHIFT_PLL is used as a dampening factor to define how much we
+  * adjust the frequency correction for a given offset in PLL mode.
+-- 
+1.7.9.5
+
