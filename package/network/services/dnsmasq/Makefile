@@ -8,17 +8,18 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.66
-PKG_RELEASE:=5
+PKG_VERSION:=2.69test8
+PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
-PKG_MD5SUM:=c5eb8fb88847a5e9bf18db67c74efd47
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq/test-releases/
+PKG_MD5SUM:=dd470ce5c61779b3c89e223cb62c5eb0
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=COPYING
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DEPENDS:=libnettle libhogweed libgmp
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
@@ -30,6 +31,7 @@ define Package/dnsmasq/Default
   CATEGORY:=Base system
   TITLE:=A lightweight DNS and DHCP server
   URL:=http://www.thekelleys.org.uk/dnsmasq/
+  DEPENDS:=+libnettle +libhogweed +libgmp
 endef
 
 define Package/dnsmasq
@@ -40,7 +42,7 @@ endef
 define Package/dnsmasq-dhcpv6
 $(call Package/dnsmasq/Default)
   TITLE += (with DHCPv6 support)
-  DEPENDS:=@IPV6 +kmod-ipv6
+  DEPENDS +=@IPV6 +kmod-ipv6
   VARIANT:=dhcpv6
 endef
 
@@ -63,7 +65,7 @@ Package/dnsmasq-dhcpv6/conffiles = $(Package/dnsmasq/conffiles)
 
 TARGET_CFLAGS += \
 	-ffunction-sections -fdata-sections \
-	$(if $(CONFIG_IPV6),,-DNO_IPV6) -DNO_IPSET -DNO_AUTH
+	$(if $(CONFIG_IPV6),,-DNO_IPV6) -DNO_IPSET -DHAVE_DNSSEC
 
 ifeq ($(BUILD_VARIANT),nodhcpv6)
   TARGET_CFLAGS += -DNO_DHCP6
@@ -72,12 +74,14 @@ endif
 MAKE_FLAGS := \
 	$(TARGET_CONFIGURE_OPTS) \
 	CFLAGS="$(TARGET_CFLAGS)" \
-	LDFLAGS="-Wl,--gc-sections" \
+	LDFLAGS="-Wl,--gc-sections -lnettle -lhogweed -lgmp" \
 	PREFIX="/usr"
 
 define Package/dnsmasq/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/dnsmasq $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/share/dnsmasq
+	$(CP) $(PKG_BUILD_DIR)/trust-anchors.conf $(1)/usr/share/dnsmasq/trust-anchors.conf
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/dhcp.conf $(1)/etc/config/dhcp
 	$(INSTALL_DATA) ./files/dnsmasq.conf $(1)/etc/dnsmasq.conf
