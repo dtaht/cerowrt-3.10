@@ -1,0 +1,90 @@
+From 43cc0efe47e69ea73a44f481eba5dc0baa58ccb0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Dave=20T=C3=A4ht?= <dave.taht@bufferbloat.net>
+Date: Mon, 17 Sep 2012 19:21:48 -0700
+Subject: [PATCH 5/7] net: reduce skb size under load on the experimental
+ qdiscs
+
+---
+ net/sched/sch_efq_codel.c |   27 +++++++++++----------------
+ net/sched/sch_nfq_codel.c |    3 ++-
+ net/sched/sch_ns2_codel.c |    3 ++-
+ 3 files changed, 15 insertions(+), 18 deletions(-)
+
+diff --git a/net/sched/sch_efq_codel.c b/net/sched/sch_efq_codel.c
+index 333beb6..0adc579 100644
+--- a/net/sched/sch_efq_codel.c
++++ b/net/sched/sch_efq_codel.c
+@@ -183,10 +183,9 @@ static int fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch)
+ 		return ret;
+ 	}
+ 
+-//	bk = deprio(skb);
+-//	idx = --idx + bk * q->something;
+ 	--idx;
+-
++	if (sch->q.qlen > 128)
++                skb = skb_reduce_truesize(skb);
+ 	now = codel_set_enqueue_time(skb);
+ 	flow = &q->flows[idx];
+ 	flow_queue_add(flow, skb);
+@@ -194,19 +193,15 @@ static int fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch)
+ 	sch->qstats.backlog += qdisc_pkt_len(skb);
+ 
+ 	if (list_empty(&flow->flowchain)) {
+-//		if(bk) {
+-//			list_add_tail(&flow->flowchain, &q->slow_flows);
+-//		} else {
+-			if(codel_time_after(now - flow->cvars.last_delivery, 
+-					    q->cparams.target)) {
+-				list_add_tail(&flow->flowchain, &q->new_flows);
+-				q->new_flow_count++;
+-				flow->deficit = qdisc_pkt_len(skb);
+-			} else {
+-				list_add_tail(&flow->flowchain, &q->old_flows);
+-				flow->deficit = q->quantum;
+-			}
+-//		}
++		if(codel_time_after(now - flow->cvars.last_delivery, 
++				    q->cparams.target)) {
++			list_add_tail(&flow->flowchain, &q->new_flows);
++			q->new_flow_count++;
++			flow->deficit = qdisc_pkt_len(skb);
++		} else {
++			list_add_tail(&flow->flowchain, &q->old_flows);
++			flow->deficit = q->quantum;
++		}
+ 	}
+ 	if (++sch->q.qlen < sch->limit)
+ 		return NET_XMIT_SUCCESS;
+diff --git a/net/sched/sch_nfq_codel.c b/net/sched/sch_nfq_codel.c
+index dcee875..494cdcc 100644
+--- a/net/sched/sch_nfq_codel.c
++++ b/net/sched/sch_nfq_codel.c
+@@ -182,7 +182,8 @@ static int fq_codel_enqueue(struct sk_buff *skb, struct Qdisc *sch)
+ 		return ret;
+ 	}
+ 	idx--;
+-
++	if (sch->q.qlen > 128)
++		skb = skb_reduce_truesize(skb);
+ 	codel_set_enqueue_time(skb);
+ 	flow = &q->flows[idx];
+ 	flow_queue_add(flow, skb);
+diff --git a/net/sched/sch_ns2_codel.c b/net/sched/sch_ns2_codel.c
+index c8d930d..0a959562 100644
+--- a/net/sched/sch_ns2_codel.c
++++ b/net/sched/sch_ns2_codel.c
+@@ -94,8 +94,9 @@ static struct sk_buff *codel_qdisc_dequeue(struct Qdisc *sch)
+ static int codel_qdisc_enqueue(struct sk_buff *skb, struct Qdisc *sch)
+ {
+ 	struct codel_sched_data *q;
+-
+ 	if (likely(qdisc_qlen(sch) < sch->limit)) {
++		if(qdisc_qlen(sch) > 128)
++			skb = skb_reduce_truesize(skb);
+ 		codel_set_enqueue_time(skb);
+ 		return qdisc_enqueue_tail(skb, sch);
+ 	}
+-- 
+1.7.9.5
+
