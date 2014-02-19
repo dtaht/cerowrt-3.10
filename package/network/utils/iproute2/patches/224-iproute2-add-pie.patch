@@ -1,0 +1,385 @@
+From subramanian.vijay@gmail.com Sun Oct 20 16:13:56 2013
+Return-Path: <subramanian.vijay@gmail.com>
+X-Original-To: dave.taht@bufferbloat.net
+Delivered-To: dave.taht@bufferbloat.net
+Received: from mail-pd0-x22b.google.com (mail-pd0-x22b.google.com [IPv6:2607:f8b0:400e:c02::22b])
+	(using TLSv1 with cipher RC4-SHA (128/128 bits))
+	(Client CN "smtp.gmail.com", Issuer "Google Internet Authority G2" (verified OK))
+	by huchra.bufferbloat.net (Postfix) with ESMTPS id 5FBBF21F1D6
+	for <dave.taht@bufferbloat.net>; Sun, 20 Oct 2013 16:13:56 -0700 (PDT)
+Received: by mail-pd0-f171.google.com with SMTP id z10so7398617pdj.30
+        for <dave.taht@bufferbloat.net>; Sun, 20 Oct 2013 16:13:52 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=from:to:cc:subject:date:message-id;
+        bh=kOrF0LPw2YEcsFW236FPXbwMJMzAEKxF3SHzTO4dXwQ=;
+        b=jwQqBTAI+Nzr+OOSr9c7tG2vklqiMl4sxrEg0joWItp3b3ZESUCLnbvT5IOWwCvd2l
+         LYJoFGHA+Xef8AEu4titIhp0+bmPymt891DI8MqX/Ei6t7nojuTkGDbIc76dRtRmKthN
+         zZXdGeHwvtkKXZvsEwBLoadT6XNyZTIF/ZFMpVQK0uoAIbRnzTxWZuXkmyHNJ8Z0NsdV
+         D++3/ONpL6hwG7S1QnIg95rjLkgJXqSkZBEFqmONFsQK+FXmJdigKGzwaup+BlnKFE5V
+         +iOWTD3svHI9oVYzGnki2noiSjR0E16hSKUQJVhicJ10dhw+gFtT/R+bfGLITOuNvQKk
+         VSYA==
+X-Received: by 10.68.6.66 with SMTP id y2mr14679913pby.60.1382310832333;
+        Sun, 20 Oct 2013 16:13:52 -0700 (PDT)
+Received: from tux.cisco.com (dhcp-128-107-165-80.cisco.com. [128.107.165.80])
+        by mx.google.com with ESMTPSA id rp8sm16750644pbc.25.2013.10.20.16.13.51
+        for <multiple recipients>
+        (version=TLSv1.1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Sun, 20 Oct 2013 16:13:51 -0700 (PDT)
+From: Vijay Subramanian <subramanian.vijay@gmail.com>
+To: dave.taht@bufferbloat.net
+Cc: mysuryan@cisco.com,
+	dave.taht@gmail.com,
+	Vijay Subramanian <subramanian.vijay@gmail.com>
+Subject: [PIE Changes for iproute2] PIE: Proportional Integral controller Enhanced
+Date: Sun, 20 Oct 2013 16:10:22 -0700
+Message-Id: <1382310622-17520-1-git-send-email-subramanian.vijay@gmail.com>
+X-Mailer: git-send-email 1.7.9.5
+Status: RO
+Content-Length: 10915
+Lines: 343
+
+vijay
+
+Proportional Integral controller Enhanced (PIE) is a scheduler to address the
+bufferbloat problem.
+
+From the IETF draft below:
+" Bufferbloat is a phenomenon where excess buffers in the network cause high
+latency and jitter. As more and more interactive applications (e.g. voice over
+IP, real time video streaming and financial transactions) run in the Internet,
+high latency and jitter degrade application performance. There is a pressing
+need to design intelligent queue management schemes that can control latency
+and jitter; and hence provide desirable quality of service to users.
+
+We present here a lightweight design, PIE(Proportional Integral controller
+Enhanced) that can effectively control the average queueing latency to a target
+value. Simulation results, theoretical analysis and Linux testbed results have
+shown that PIE can ensure low latency and achieve high link utilization under
+various congestion situations. The design does not require per-packet
+timestamp, so it incurs very small overhead and is simple enough to implement
+in both hardware and software.  "
+
+Many thanks to Dave Taht for extensive feedback, reviews, testing and
+suggestions. Thanks also to Stephen Hemminger for initial review and suggestion
+to use psched and friends.   Naeem Khademi and Dave Taht independently
+contributed to ECN support.
+
+For more information, please see technical paper about PIE in the IEEE
+Conference on High Performance Switching and Routing 2013. A copy of the paper
+can be found at ftp://ftpeng.cisco.com/pie/.
+
+Please also refer to the IETF draft submission at
+http://tools.ietf.org/html/draft-pan-tsvwg-pie-00
+
+All relevant code, documents and test scripts and results can be found at
+ftp://ftpeng.cisco.com/pie/.
+
+For problems with the iproute2/tc or Linux kernel code, please contact Vijay
+Subramanian (vijaynsu@cisco.com or subramanian.vijay@gmail.com) Mythili Prabhu
+(mysuryan@cisco.com)
+
+Signed-off-by: Vijay Subramanian <subramanian.vijay@gmail.com>
+---
+ include/linux/pkt_sched.h |   26 +++++
+ tc/Makefile               |    1 +
+ tc/q_pie.c                |  239 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 266 insertions(+)
+ create mode 100644 tc/q_pie.c
+
+diff --git a/include/linux/pkt_sched.h b/include/linux/pkt_sched.h
+index 32aef0a..9724c4e 100644
+--- a/include/linux/pkt_sched.h
++++ b/include/linux/pkt_sched.h
+@@ -735,4 +735,30 @@ struct tc_fq_codel_xstats {
+ 	};
+ };
+ 
++/*PIE*/
++enum {
++	TCA_PIE_UNSPEC,
++	TCA_PIE_TARGET,
++	TCA_PIE_LIMIT,
++	TCA_PIE_TUPDATE,
++	TCA_PIE_ALPHA,
++	TCA_PIE_BETA,
++	TCA_PIE_ECN,
++	TCA_PIE_BYTEMODE,
++	__TCA_PIE_MAX
++};
++
++#define TCA_PIE_MAX   (__TCA_PIE_MAX - 1)
++
++struct tc_pie_xstats {
++	__u32 prob;        /* current probability */
++	__u32 delay;       /* current delay in ms */
++	__u32 avg_dq_rate; /* current average dq_rate in bytes/jiffy */
++	__u32 packets_in;  /*total number of packets enqueued */
++	__u32 dropped;     /*packets dropped due to pie_action */
++	__u32 overlimit;   /*dropped due to lack of space in queue */
++	__u32 maxq;        /*maximum queue size */
++	__u32 ecn_mark;    /*number of packets ECN marked instead of dropping*/
++};
++
+ #endif
+diff --git a/tc/Makefile b/tc/Makefile
+index f26e764..d831b9c 100644
+--- a/tc/Makefile
++++ b/tc/Makefile
+@@ -50,6 +50,7 @@ TCMODULES += em_meta.o
+ TCMODULES += q_mqprio.o
+ TCMODULES += q_codel.o
+ TCMODULES += q_fq_codel.o
++TCMODULES += q_pie.o
+ 
+ ifeq ($(TC_CONFIG_IPSET), y)
+   ifeq ($(TC_CONFIG_XT), y)
+diff --git a/tc/q_pie.c b/tc/q_pie.c
+new file mode 100644
+index 0000000..dfba621
+--- /dev/null
++++ b/tc/q_pie.c
+@@ -0,0 +1,239 @@
++/*
++ *
++ *  Copyright (C) Vijay SUbramanian <subramanian.vijay@gmail.com,
++ *  vijaynsu@cisco.com>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions, and the following disclaimer,
++ *    without modification.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. The names of the authors may not be used to endorse or promote products
++ *    derived from this software without specific prior written permission.
++ *
++ * Alternatively, provided that this notice is retained in full, this
++ * software may be distributed under the terms of the GNU General
++ * Public License ("GPL") version 2, in which case the provisions of the
++ * GPL apply INSTEAD OF those given above.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
++ * DAMAGE.
++ *
++ * ECN support is added by Naeem Khademi <naeemk@ifi.uio.no>
++ * University of Oslo, Norway.
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <unistd.h>
++#include <syslog.h>
++#include <fcntl.h>
++#include <sys/socket.h>
++#include <netinet/in.h>
++#include <arpa/inet.h>
++#include <string.h>
++#include <math.h>
++
++#include "utils.h"
++#include "tc_util.h"
++
++static void explain(void)
++{
++	fprintf(stderr, "Usage: ... pie [ limit PACKETS ][ target TIME us]\n");
++	fprintf(stderr, "              [ tupdate TIME us][ alpha ALPHA ]");
++	fprintf(stderr, "[beta BETA ][bytemode | nobytemode][ecn | noecn ]\n");
++}
++
++#define ALPHA_MAX 32
++#define ALPHA_MIN 0
++#define BETA_MAX 32
++#define BETA_MIN 0
++
++static int pie_parse_opt(struct qdisc_util *qu, int argc, char **argv,
++			 struct nlmsghdr *n)
++{
++	unsigned int limit = 0;
++	unsigned int target = 0;
++	unsigned int tupdate = 0;
++	unsigned int alpha = 0;
++	unsigned int beta = 0;
++	int ecn = -1;
++	int bytemode = -1;
++	struct rtattr *tail;
++
++	while (argc > 0) {
++		if (strcmp(*argv, "limit") == 0) {
++			NEXT_ARG();
++			if (get_unsigned(&limit, *argv, 0)) {
++				fprintf(stderr, "Illegal \"limit\"\n");
++				return -1;
++			}
++		} else if (strcmp(*argv, "target") == 0) {
++			NEXT_ARG();
++			if (get_time(&target, *argv)) {
++				fprintf(stderr, "Illegal \"target\"\n");
++				return -1;
++			}
++		} else if (strcmp(*argv, "tupdate") == 0) {
++			NEXT_ARG();
++			if (get_time(&tupdate, *argv)) {
++				fprintf(stderr, "Illegal \"tupdate\"\n");
++				return -1;
++			}
++		} else if (strcmp(*argv, "alpha") == 0) {
++			NEXT_ARG();
++			if (get_unsigned(&alpha, *argv, 0)
++			    || (alpha > ALPHA_MAX) || (alpha < ALPHA_MIN)) {
++				fprintf(stderr, "Illegal \"alpha\"\n");
++				return -1;
++			}
++		} else if (strcmp(*argv, "beta") == 0) {
++			NEXT_ARG();
++			if (get_unsigned(&beta, *argv, 0) || (beta > BETA_MAX)
++			    || (beta < BETA_MIN)) {
++				fprintf(stderr, "Illegal \"beta\"\n");
++				return -1;
++			}
++		} else if (strcmp(*argv, "ecn") == 0) {
++			ecn = 1;
++		} else if (strcmp(*argv, "noecn") == 0) {
++			ecn = 0;
++		} else if (strcmp(*argv, "bytemode") == 0) {
++			bytemode = 1;
++		} else if (strcmp(*argv, "nobytemode") == 0) {
++			bytemode = 0;
++		} else if (strcmp(*argv, "help") == 0) {
++			explain();
++			return -1;
++		} else {
++			fprintf(stderr, "What is \"%s\"?\n", *argv);
++			explain();
++			return -1;
++		}
++		argc--;
++		argv++;
++	}
++
++	tail = NLMSG_TAIL(n);
++	addattr_l(n, 1024, TCA_OPTIONS, NULL, 0);
++	if (limit)
++		addattr_l(n, 1024, TCA_PIE_LIMIT, &limit, sizeof(limit));
++	if (tupdate)
++		addattr_l(n, 1024, TCA_PIE_TUPDATE, &tupdate, sizeof(tupdate));
++	if (target)
++		addattr_l(n, 1024, TCA_PIE_TARGET, &target, sizeof(target));
++	if (alpha)
++		addattr_l(n, 1024, TCA_PIE_ALPHA, &alpha, sizeof(alpha));
++	if (beta)
++		addattr_l(n, 1024, TCA_PIE_BETA, &beta, sizeof(beta));
++	if (ecn != -1)
++		addattr_l(n, 1024, TCA_PIE_ECN, &ecn, sizeof(ecn));
++	if (bytemode != -1)
++		addattr_l(n, 1024, TCA_PIE_BYTEMODE, &bytemode,
++			  sizeof(bytemode));
++
++	tail->rta_len = (void *)NLMSG_TAIL(n) - (void *)tail;
++	return 0;
++}
++
++static int pie_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
++{
++	struct rtattr *tb[TCA_PIE_MAX + 1];
++	unsigned int limit;
++	unsigned int tupdate;
++	unsigned int target;
++	unsigned int alpha;
++	unsigned int beta;
++	unsigned ecn;
++	unsigned bytemode;
++
++	if (opt == NULL)
++		return 0;
++
++	parse_rtattr_nested(tb, TCA_PIE_MAX, opt);
++
++	if (tb[TCA_PIE_LIMIT] &&
++	    RTA_PAYLOAD(tb[TCA_PIE_LIMIT]) >= sizeof(__u32)) {
++		limit = rta_getattr_u32(tb[TCA_PIE_LIMIT]);
++		fprintf(f, "limit %up ", limit);
++	}
++	if (tb[TCA_PIE_TARGET] &&
++	    RTA_PAYLOAD(tb[TCA_PIE_TARGET]) >= sizeof(__u32)) {
++		target = rta_getattr_u32(tb[TCA_PIE_TARGET]);
++		fprintf(f, "target %u ", target);
++	}
++	if (tb[TCA_PIE_TUPDATE] &&
++	    RTA_PAYLOAD(tb[TCA_PIE_TUPDATE]) >= sizeof(__u32)) {
++		tupdate = rta_getattr_u32(tb[TCA_PIE_TUPDATE]);
++		fprintf(f, "tupdate %u ", tupdate);
++	}
++	if (tb[TCA_PIE_ALPHA] &&
++	    RTA_PAYLOAD(tb[TCA_PIE_ALPHA]) >= sizeof(__u32)) {
++		alpha = rta_getattr_u32(tb[TCA_PIE_ALPHA]);
++		fprintf(f, "alpha %u ", alpha);
++	}
++	if (tb[TCA_PIE_BETA] &&
++	    RTA_PAYLOAD(tb[TCA_PIE_BETA]) >= sizeof(__u32)) {
++		beta = rta_getattr_u32(tb[TCA_PIE_BETA]);
++		fprintf(f, "beta %u ", beta);
++	}
++
++	if (tb[TCA_PIE_ECN] && RTA_PAYLOAD(tb[TCA_PIE_ECN]) >= sizeof(__u32)) {
++		ecn = rta_getattr_u32(tb[TCA_PIE_ECN]);
++		if (ecn)
++			fprintf(f, "ecn ");
++	}
++
++	if (tb[TCA_PIE_BYTEMODE] &&
++	    RTA_PAYLOAD(tb[TCA_PIE_BYTEMODE]) >= sizeof(__u32)) {
++		bytemode = rta_getattr_u32(tb[TCA_PIE_BYTEMODE]);
++		if (bytemode)
++			fprintf(f, "bytemode ");
++	}
++
++	return 0;
++}
++
++static int pie_print_xstats(struct qdisc_util *qu, FILE *f,
++			    struct rtattr *xstats)
++{
++	struct tc_pie_xstats *st;
++
++	if (xstats == NULL)
++		return 0;
++
++	if (RTA_PAYLOAD(xstats) < sizeof(*st))
++		return -1;
++
++	st = RTA_DATA(xstats);
++	/*prob is returned as a fracion of maximum integer value */
++	fprintf(f, "prob %f delay %uus avg_dq_rate %u\n",
++		(double)st->prob / (double)0xffffffff, st->delay,
++		st->avg_dq_rate);
++	fprintf(f, "pkts_in %u overlimit %u dropped %u maxq %u ecn_mark %u\n",
++		st->packets_in, st->overlimit, st->dropped, st->maxq,
++		st->ecn_mark);
++	return 0;
++
++}
++
++struct qdisc_util pie_qdisc_util = {
++	.id = "pie",
++	.parse_qopt = pie_parse_opt,
++	.print_qopt = pie_print_opt,
++	.print_xstats = pie_print_xstats,
++};
+-- 
+1.7.9.5
+
+
