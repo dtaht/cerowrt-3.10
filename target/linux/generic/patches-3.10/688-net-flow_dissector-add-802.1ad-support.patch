@@ -12,8 +12,11 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/core/flow_dissector.c |    1 +
  1 file changed, 1 insertion(+)
 
+<<<<<<< HEAD
 diff --git a/net/core/flow_dissector.c b/net/core/flow_dissector.c
 index ade9ff1..159737c 100644
+=======
+>>>>>>> d3c1bbb742932a50bc741b2ebf18777a129a6035
 --- a/net/core/flow_dissector.c
 +++ b/net/core/flow_dissector.c
 @@ -65,6 +65,7 @@ ipv6:
@@ -24,6 +27,9 @@ index ade9ff1..159737c 100644
  	case __constant_htons(ETH_P_8021Q): {
  		const struct vlan_hdr *vlan;
  		struct vlan_hdr _vlan;
+<<<<<<< HEAD
 -- 
 1.7.9.5
 
+=======
+>>>>>>> d3c1bbb742932a50bc741b2ebf18777a129a6035
