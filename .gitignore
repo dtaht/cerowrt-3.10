@@ -23,3 +23,5 @@
 .emacs.desktop*
 TAGS*~
 git-src
+.cerobuild.config
+.feeds.conf.cerobuild
