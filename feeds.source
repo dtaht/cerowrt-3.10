@@ -1,0 +1,4 @@
+cero https://github.com/dtaht/ceropackages-3.10.git cb32daabb7c123d38dd4ca49ad7e5d0f3f86edd4
+packages git://nbd.name/packages.git 70b70c58298c7408a1b44f8c2744e131ea6486f6
+luci git://nbd.name/luci.git 91e6718ddad2cf4901f56b11028545d6dd1def52
+routing git://github.com/openwrt-routing/packages.git a8313faa28b2a603fc22001a6da51a74dc957afb
