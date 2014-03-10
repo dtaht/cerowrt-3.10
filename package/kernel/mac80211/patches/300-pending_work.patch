@@ -1,3 +1,106 @@
+commit 8d804f1af11e4e058b1e8453327777d73a585cb8
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Sun Mar 9 11:25:43 2014 +0100
+
+    ath9k: clean up and enhance ANI debugfs file
+    
+    Unify scnprintf calls and include the current OFDM/CCK immunity level.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+commit 22e298b5a3a8a49e33805d4e351965123dede35b
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Sun Mar 9 10:58:47 2014 +0100
+
+    ath9k: fix ready time of the multicast buffer queue
+    
+    qi->tqi_readyTime is written directly to registers that expect
+    microseconds as unit instead of TU.
+    When setting the CABQ ready time, cur_conf->beacon_interval is in TU, so
+    convert it to microseconds before passing it to ath9k_hw.
+    
+    This should hopefully fix some Tx DMA issues with buffered multicast
+    frames in AP mode.
+    
+    Cc: stable@vger.kernel.org
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+commit fcb064fdd5a27bec8d24099bc0172468f34c97cb
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Sun Mar 9 09:43:09 2014 +0100
+
+    ath9k_hw: fix unreachable code in baseband hang detection code
+    
+    The commit "ath9k: reduce baseband hang detection false positive rate"
+    added a delay in the loop checking the baseband state, however it was
+    unreachable due to previous 'continue' statements.
+    
+    Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+commit 31959d8df39319e32c6d5ba9c135727be90cfad7
+Author: Michal Kazior <michal.kazior@tieto.com>
+Date:   Fri Mar 7 08:09:38 2014 +0100
+
+    mac80211: fix possible NULL dereference
+    
+    If chanctx is missing on a given vif then the band
+    is assumed to be 2GHz. However if hw doesn't
+    support 2GHz band then mac80211 ended up with a
+    NULL dereference.
+    
+    This fixes a splat:
+    
+    [ 4605.207223] BUG: unable to handle kernel NULL pointer dereference at 0000000000000018
+    [ 4605.210789] IP: [<ffffffffa07b5635>] ieee80211_parse_bitrates+0x65/0x110 [mac80211]
+    
+    The splat was preceeded by WARN_ON(!chanctx_conf)
+    in ieee80211_get_sdata_band().
+    
+    Signed-off-by: Michal Kazior <michal.kazior@tieto.com>
+
+commit 6c5a3ffa0a2d22c091a2717f427259bacf77ac5e
+Author: Michael Braun <michael-dev@fami-braun.de>
+Date:   Thu Mar 6 15:08:43 2014 +0100
+
+    mac80211: fix WPA with VLAN on AP side with ps-sta again
+    
+    commit de74a1d9032f4d37ea453ad2a647e1aff4cd2591
+      "mac80211: fix WPA with VLAN on AP side with ps-sta"
+    fixed an issue where queued multicast packets would
+    be sent out encrypted with the key of an other bss.
+    
+    commit "7cbf9d017dbb5e3276de7d527925d42d4c11e732"
+      "mac80211: fix oops on mesh PS broadcast forwarding"
+    essentially reverted it, because vif.type cannot be AP_VLAN
+    due to the check to vif.type in ieee80211_get_buffered_bc before.
+    
+    As the later commit intended to fix the MESH case, fix it
+    by checking for IFTYPE_AP instead of IFTYPE_AP_VLAN.
+    
+    Fixes: 7cbf9d017dbb
+    Cc: <stable@vger.kernel.org> # 3.10.x
+    Cc: <stable@vger.kernel.org> # 3.11.x
+    Cc: <stable@vger.kernel.org> # 3.12.x
+    Cc: <stable@vger.kernel.org> # 3.13.x
+    Cc: <linux-wireless@vger.kernel.org>
+    Cc: <projekt-wlan@fem.tu-ilmenau.de>
+    Signed-off-by: Michael Braun <michael-dev@fami-braun.de>
+
+commit 9d6ab9bdb9b368a6cf9519f0f92509b5b2c297ec
+Author: Johannes Berg <johannes.berg@intel.com>
+Date:   Mon Mar 3 14:19:08 2014 +0100
+
+    cfg80211: remove racy beacon_interval assignment
+    
+    In case of AP mode, the beacon interval is already reset to
+    zero inside cfg80211_stop_ap(), and in the other modes it
+    isn't relevant. Remove the assignment to remove a potential
+    race since the assignment isn't properly locked.
+    
+    Reported-by: Michal Kazior <michal.kazior@tieto.com>
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
 commit 1abdeca3c6fb9cf1f84f85e78ed8d1c33bd69db0
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Fri Feb 28 18:52:56 2014 +0100
@@ -1134,7 +1237,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
  	if (AR_SREV_9300(ah))
  		return !ath9k_hw_detect_mac_hang(ah);
-@@ -1542,9 +1542,13 @@ bool ath9k_hw_check_alive(struct ath_hw 
+@@ -1542,9 +1542,14 @@ bool ath9k_hw_check_alive(struct ath_hw 
  	if (AR_SREV_9285_12_OR_LATER(ah))
  		return true;
  
@@ -1144,20 +1247,12 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
 +		if (reg != last_val)
 +			return true;
  
++		udelay(1);
 +		last_val = reg;
  		if ((reg & 0x7E7FFFEF) == 0x00702400)
  			continue;
  
-@@ -1556,6 +1560,8 @@ bool ath9k_hw_check_alive(struct ath_hw 
- 		default:
- 			return true;
- 		}
-+
-+		udelay(1);
- 	} while (count-- > 0);
- 
- 	return false;
-@@ -2051,9 +2057,8 @@ static bool ath9k_hw_set_power_awake(str
+@@ -2051,9 +2056,8 @@ static bool ath9k_hw_set_power_awake(str
  
  	REG_SET_BIT(ah, AR_RTC_FORCE_WAKE,
  		    AR_RTC_FORCE_WAKE_EN);
@@ -1487,7 +1582,17 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  
  	__sta_info_flush(sdata, true);
  	ieee80211_free_keys(sdata, true);
-@@ -2638,6 +2643,24 @@ static int ieee80211_start_roc_work(stru
+@@ -1988,6 +1993,9 @@ static int ieee80211_change_bss(struct w
+ 
+ 	band = ieee80211_get_sdata_band(sdata);
+ 
++	if (WARN_ON(!wiphy->bands[band]))
++		return -EINVAL;
++
+ 	if (params->use_cts_prot >= 0) {
+ 		sdata->vif.bss_conf.use_cts_prot = params->use_cts_prot;
+ 		changed |= BSS_CHANGED_ERP_CTS_PROT;
+@@ -2638,6 +2646,24 @@ static int ieee80211_start_roc_work(stru
  	INIT_DELAYED_WORK(&roc->work, ieee80211_sw_roc_work);
  	INIT_LIST_HEAD(&roc->dependents);
  
@@ -1512,7 +1617,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	/* if there's one pending or we're scanning, queue this one */
  	if (!list_empty(&local->roc_list) ||
  	    local->scanning || local->radar_detect_enabled)
-@@ -2772,24 +2795,6 @@ static int ieee80211_start_roc_work(stru
+@@ -2772,24 +2798,6 @@ static int ieee80211_start_roc_work(stru
  	if (!queued)
  		list_add_tail(&roc->list, &local->roc_list);
  
@@ -1537,7 +1642,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	return 0;
  }
  
-@@ -3004,8 +3009,10 @@ void ieee80211_csa_finalize_work(struct 
+@@ -3004,8 +3012,10 @@ void ieee80211_csa_finalize_work(struct 
  	if (!ieee80211_sdata_running(sdata))
  		goto unlock;
  
@@ -1549,7 +1654,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	err = ieee80211_vif_change_channel(sdata, &changed);
  	mutex_unlock(&local->mtx);
  	if (WARN_ON(err < 0))
-@@ -3022,13 +3029,13 @@ void ieee80211_csa_finalize_work(struct 
+@@ -3022,13 +3032,13 @@ void ieee80211_csa_finalize_work(struct 
  	switch (sdata->vif.type) {
  	case NL80211_IFTYPE_AP:
  		err = ieee80211_assign_beacon(sdata, sdata->u.ap.next_beacon);
@@ -1566,7 +1671,7 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		ieee80211_bss_info_change_notify(sdata, err);
  		break;
  	case NL80211_IFTYPE_ADHOC:
-@@ -3066,7 +3073,7 @@ int ieee80211_channel_switch(struct wiph
+@@ -3066,7 +3076,7 @@ int ieee80211_channel_switch(struct wiph
  	struct ieee80211_if_mesh __maybe_unused *ifmsh;
  	int err, num_chanctx;
  
@@ -1806,6 +1911,15 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	return 0;
  }
  
+@@ -2900,7 +2912,7 @@ ieee80211_get_buffered_bc(struct ieee802
+ 				cpu_to_le16(IEEE80211_FCTL_MOREDATA);
+ 		}
+ 
+-		if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
++		if (sdata->vif.type == NL80211_IFTYPE_AP)
+ 			sdata = IEEE80211_DEV_TO_SUB_IF(skb->dev);
+ 		if (!ieee80211_tx_prepare(sdata, &tx, skb))
+ 			break;
 --- a/net/mac80211/wpa.c
 +++ b/net/mac80211/wpa.c
 @@ -499,7 +499,7 @@ ieee80211_crypto_ccmp_decrypt(struct iee
@@ -1857,7 +1971,16 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  	/*
  	 * There are major locking problems in nl80211/mac80211 for CSA,
  	 * disable for all drivers until this has been reworked.
-@@ -875,8 +875,11 @@ static int cfg80211_netdev_notifier_call
+@@ -795,8 +795,6 @@ void cfg80211_leave(struct cfg80211_regi
+ 	default:
+ 		break;
+ 	}
+-
+-	wdev->beacon_interval = 0;
+ }
+ 
+ static int cfg80211_netdev_notifier_call(struct notifier_block *nb,
+@@ -875,8 +873,11 @@ static int cfg80211_netdev_notifier_call
  		break;
  	case NETDEV_DOWN:
  		cfg80211_update_iface_num(rdev, wdev->iftype, -1);
@@ -3190,6 +3313,15 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		buffered = ath_tid_has_buffered(tid);
  
  		tid->sched = false;
+@@ -1696,7 +1698,7 @@ int ath_cabq_update(struct ath_softc *sc
+ 
+ 	ath9k_hw_get_txq_props(sc->sc_ah, qnum, &qi);
+ 
+-	qi.tqi_readyTime = (cur_conf->beacon_interval *
++	qi.tqi_readyTime = (TU_TO_USEC(cur_conf->beacon_interval) *
+ 			    ATH_CABQ_READY_TIME) / 100;
+ 	ath_txq_update(sc, qnum, &qi);
+ 
 @@ -2184,14 +2186,15 @@ int ath_tx_start(struct ieee80211_hw *hw
  		txq->stopped = true;
  	}
@@ -3455,7 +3587,79 @@ Date:   Thu Jan 23 20:06:34 2014 +0100
  		schedule_delayed_work(&reg_timeout, msecs_to_jiffies(3142));
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -866,6 +866,12 @@ static ssize_t read_file_reset(struct fi
+@@ -138,43 +138,41 @@ static ssize_t read_file_ani(struct file
+ 	unsigned int len = 0, size = 1024;
+ 	ssize_t retval = 0;
+ 	char *buf;
++	int i;
++	struct {
++		const char *name;
++		unsigned int val;
++	} ani_info[] = {
++		{ "ANI RESET", ah->stats.ast_ani_reset },
++		{ "OFDM LEVEL", ah->ani.ofdmNoiseImmunityLevel },
++		{ "CCK LEVEL", ah->ani.cckNoiseImmunityLevel },
++		{ "SPUR UP", ah->stats.ast_ani_spurup },
++		{ "SPUR DOWN", ah->stats.ast_ani_spurup },
++		{ "OFDM WS-DET ON", ah->stats.ast_ani_ofdmon },
++		{ "OFDM WS-DET OFF", ah->stats.ast_ani_ofdmoff },
++		{ "MRC-CCK ON", ah->stats.ast_ani_ccklow },
++		{ "MRC-CCK OFF", ah->stats.ast_ani_cckhigh },
++		{ "FIR-STEP UP", ah->stats.ast_ani_stepup },
++		{ "FIR-STEP DOWN", ah->stats.ast_ani_stepdown },
++		{ "INV LISTENTIME", ah->stats.ast_ani_lneg_or_lzero },
++		{ "OFDM ERRORS", ah->stats.ast_ani_ofdmerrs },
++		{ "CCK ERRORS", ah->stats.ast_ani_cckerrs },
++	};
+ 
+ 	buf = kzalloc(size, GFP_KERNEL);
+ 	if (buf == NULL)
+ 		return -ENOMEM;
+ 
+-	if (common->disable_ani) {
+-		len += scnprintf(buf + len, size - len, "%s: %s\n",
+-				 "ANI", "DISABLED");
++	len += scnprintf(buf + len, size - len, "%15s: %s\n", "ANI",
++			 common->disable_ani ? "DISABLED" : "ENABLED");
++
++	if (common->disable_ani)
+ 		goto exit;
+-	}
+ 
+-	len += scnprintf(buf + len, size - len, "%15s: %s\n",
+-			 "ANI", "ENABLED");
+-	len += scnprintf(buf + len, size - len, "%15s: %u\n",
+-			 "ANI RESET", ah->stats.ast_ani_reset);
+-	len += scnprintf(buf + len, size - len, "%15s: %u\n",
+-			 "SPUR UP", ah->stats.ast_ani_spurup);
+-	len += scnprintf(buf + len, size - len, "%15s: %u\n",
+-			 "SPUR DOWN", ah->stats.ast_ani_spurup);
+-	len += scnprintf(buf + len, size - len, "%15s: %u\n",
+-			 "OFDM WS-DET ON", ah->stats.ast_ani_ofdmon);
+-	len += scnprintf(buf + len, size - len, "%15s: %u\n",
+-			 "OFDM WS-DET OFF", ah->stats.ast_ani_ofdmoff);
+-	len += scnprintf(buf + len, size - len, "%15s: %u\n",
+-			 "MRC-CCK ON", ah->stats.ast_ani_ccklow);
+-	len += scnprintf(buf + len, size - len, "%15s: %u\n",
+-			 "MRC-CCK OFF", ah->stats.ast_ani_cckhigh);
+-	len += scnprintf(buf + len, size - len, "%15s: %u\n",
+-			 "FIR-STEP UP", ah->stats.ast_ani_stepup);
+-	len += scnprintf(buf + len, size - len, "%15s: %u\n",
+-			 "FIR-STEP DOWN", ah->stats.ast_ani_stepdown);
+-	len += scnprintf(buf + len, size - len, "%15s: %u\n",
+-			 "INV LISTENTIME", ah->stats.ast_ani_lneg_or_lzero);
+-	len += scnprintf(buf + len, size - len, "%15s: %u\n",
+-			 "OFDM ERRORS", ah->stats.ast_ani_ofdmerrs);
+-	len += scnprintf(buf + len, size - len, "%15s: %u\n",
+-			 "CCK ERRORS", ah->stats.ast_ani_cckerrs);
++	for (i = 0; i < ARRAY_SIZE(ani_info); i++)
++		len += scnprintf(buf + len, size - len, "%15s: %u\n",
++				 ani_info[i].name, ani_info[i].val);
++
+ exit:
+ 	if (len > size)
+ 		len = size;
+@@ -866,6 +864,12 @@ static ssize_t read_file_reset(struct fi
  			 "%17s: %2d\n", "PLL RX Hang",
  			 sc->debug.stats.reset[RESET_TYPE_PLL_HANG]);
  	len += scnprintf(buf + len, sizeof(buf) - len,
