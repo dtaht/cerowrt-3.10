@@ -57,7 +57,6 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	$(CP) $(INCLUDE_DIR) $(SCRIPT_DIR) $(TOPDIR)/docs $(SDK_BUILD_DIR)/
 	$(TAR) -cf - -C $(TOPDIR) \
 		$(foreach exclude,$(EXCLUDE_DIRS),--exclude="$(exclude)") \
-		--exclude="staging_dir/$(ARCH)" \
 		$(SDK_DIRS) $(KERNEL_FILES) | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
 	mkdir -p $(SDK_BUILD_DIR)/target/linux
@@ -65,6 +64,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	rm -rf \
 		$(SDK_BUILD_DIR)/target/linux/*/files* \
 		$(SDK_BUILD_DIR)/target/linux/*/patches*
+	./convert-config.pl $(TOPDIR)/.config > $(SDK_BUILD_DIR)/Config-build.in
 	$(CP) -L \
 		$(TOPDIR)/LICENSE \
 		$(TOPDIR)/rules.mk \
@@ -74,7 +74,6 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 		./files/README.SDK \
 		$(SDK_BUILD_DIR)/
 	$(CP) \
-		./files/package/rules.mk \
 		$(TOPDIR)/package/Makefile \
 		$(SDK_BUILD_DIR)/package/
 	$(if $(SVN_PACKAGE_URL),echo "src-svn trunk $(SVN_PACKAGE_URL)" \
