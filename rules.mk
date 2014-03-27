@@ -16,9 +16,6 @@ include $(TOPDIR)/include/verbose.mk
 
 export TMP_DIR:=$(TOPDIR)/tmp
 
-GREP_OPTIONS=
-export GREP_OPTIONS
-
 qstrip=$(strip $(subst ",,$(1)))
 #"))
 
@@ -260,23 +257,13 @@ else
     $(SCRIPT_DIR)/rstrip.sh
 endif
 
-ifeq ($(CONFIG_ENABLE_LOCALE),true)
-  DISABLE_NLS:=--enable-nls
-else
-  DISABLE_NLS:=--disable-nls
-endif
-
 ifeq ($(CONFIG_IPV6),y)
   DISABLE_IPV6:=
 else
   DISABLE_IPV6:=--disable-ipv6
 endif
 
-ifeq ($(CONFIG_TAR_VERBOSITY),y)
-  TAR_OPTIONS:=-xvf -
-else
-  TAR_OPTIONS:=-xf -
-endif
+TAR_OPTIONS:=-xf -
 
 ifeq ($(CONFIG_BUILD_LOG),y)
   BUILD_LOG:=1

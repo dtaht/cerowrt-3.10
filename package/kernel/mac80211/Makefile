@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 
 PKG_VERSION:=2014-01-23.1
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_BACKPORT_VERSION:=
 PKG_MD5SUM:=8db16edbdaf4abc2e9c2f3b6c86736a6
@@ -845,6 +845,13 @@ define KernelPackage/iwlagn/config
 		help
 		  Download and install firmware for:
 		    Intel Centrino Advanced-N 6230, Wireless-N 1030, Wireless-N 130 and Advanced-N 6235
+
+	config IWL7260_FW
+		bool "Intel 7260 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Dual Band Wireless-N 7260 and Intel Dual Band Wireless-AC 7260
 
 	config IWL100_FW
 		bool "Intel 100 Firmware"
@@ -1724,6 +1731,9 @@ ifneq ($(CONFIG_IWL6005_FW),)
 endif
 ifneq ($(CONFIG_IWL6030_FW),)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-6000g2b-6.ucode $(1)/lib/firmware
+endif
+ifneq ($(CONFIG_IWL7260_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-7260-7.ucode $(1)/lib/firmware
 endif
 ifneq ($(CONFIG_IWL100_FW),)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-100-5.ucode $(1)/lib/firmware

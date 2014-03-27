@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ustream-ssl
-PKG_VERSION:=2014-03-14
+PKG_VERSION:=2014-03-25
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/ustream-ssl.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=2263994fef00cd53642c0337e893fb2d1b35c081
+PKG_SOURCE_VERSION:=fc0b5ec804ee43c532978dd04ab0509c34baefb0
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 CMAKE_INSTALL:=1
 
@@ -26,6 +26,7 @@ define Package/libustream/default
   CATEGORY:=Libraries
   TITLE:=ustream SSL Library
   DEPENDS:=+libubox
+  ABI_VERSION:=$(PKG_VERSION)
 endef
 
 define Package/libustream-openssl
