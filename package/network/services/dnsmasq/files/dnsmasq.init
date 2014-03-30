@@ -521,6 +521,7 @@ start_service() {
 
 	procd_open_instance
 	procd_set_param command $PROG -C $CONFIGFILE -k
+        [ -n "$DNSMASQ_HOTPLUG" ] && procd_append_param command --dnssec-no-timecheck
 	procd_set_param file $CONFIGFILE
 	procd_close_instance
 
@@ -578,6 +579,8 @@ start_service() {
 	for DNS_SERVER in $DNS_SERVERS ; do
 		echo "nameserver $DNS_SERVER" >> /tmp/resolv.conf
 	done
+
+        [ -n "$DNSMASQ_HOTPLUG" ] && /usr/sbin/dnsmasq-checkntp &
 }
 
 reload_service() {

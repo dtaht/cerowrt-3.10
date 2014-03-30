@@ -2,4 +2,5 @@
 
 [ "$ACTION" = ifup ] || exit 0
 
+export DNSMASQ_HOTPLUG=1
 /etc/init.d/dnsmasq enabled && /etc/init.d/dnsmasq start
