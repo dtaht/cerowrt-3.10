@@ -46,7 +46,9 @@ endef
 CONFIGURE_ARGS += \
 	--target=$(REAL_GNU_TARGET_NAME) \
 	--disable-werror \
-	--disable-nls
+	--disable-nls \
+	--disable-device-mapper \
+	--disable-grub-mkfont
 
 HOST_CONFIGURE_ARGS += \
 	--target=$(REAL_GNU_TARGET_NAME) \

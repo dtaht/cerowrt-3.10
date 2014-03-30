@@ -118,6 +118,45 @@ define Image/Build/jffs2-256k
 	cat $(KDIR)/uImage-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
 endef
 
+define Image/Build/ubifs
+
+ifneq ($($(PROFILE)_UBIFS_OPTS),)
+	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubifs
+endif
+endef
+
+define Image/Build/ubi
+
+ifneq ($($(PROFILE)_UBI_OPTS),)
+	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubi
+endif
+endef
+
+define Image/InstallKernel/Template
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
+	$(INSTALL_DIR) $(TARGET_DIR)/boot
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE),)
+	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage $(TARGET_DIR)/boot/
+	ln -sf $(IMG_PREFIX)-$(1)-uImage $(TARGET_DIR)/boot/uImage
+endif
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_ZIMAGE),)
+	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-zImage $(TARGET_DIR)/boot/
+	ln -sf $(IMG_PREFIX)-$(1)-zImage $(TARGET_DIR)/boot/zImage
+endif
+endif
+
+ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
+	$(INSTALL_DIR) $(TARGET_DIR)/boot
+
+ifneq ($(1),)
+	$(CP) $(KDIR)/$(1).dtb $(TARGET_DIR)/boot/
+endif
+endif
+endef
+
 define Image/BuildKernel/Template
 	$(call PatchKernelLzma,$(1))
 	$(call MkImageLzma,$(1))
@@ -230,6 +269,9 @@ Image/Build/Profile/ARV7510PW22=$(call Image/Build/$(1),$(1),ARV7510PW22)
 Image/BuildKernel/Profile/ARV7518PW=$(call Image/BuildKernel/Template,ARV7518PW)
 Image/Build/Profile/ARV7518PW=$(call Image/Build/$(1),$(1),ARV7518PW)
 
+Image/BuildKernel/Profile/ARV7519PW=$(call Image/BuildKernel/Template,ARV7519PW)
+Image/Build/Profile/ARV7519PW=$(call Image/Build/$(1),$(1),ARV7519PW)
+
 Image/BuildKernel/Profile/ARV752DPW=$(call Image/BuildKernel/Template,ARV752DPW)
 Image/Build/Profile/ARV752DPW=$(call Image/Build/$(1),$(1),ARV752DPW)
 
@@ -265,12 +307,22 @@ Image/Build/Profile/H201L=$(call Image/Build/$(1),$(1),H201L)
 Image/BuildKernel/Profile/P2601HNFX=$(call Image/BuildKernel/Template,P2601HNFX)
 Image/Build/Profile/P2601HNFX=$(call Image/Build/$(1),$(1),P2601HNFX)
 
+Image/BuildKernel/Profile/ARV7519RWV11=$(call Image/BuildKernel/Template,ARV7519RWV11,$(1))
+Image/Build/Profile/ARV7519RWV11=$(call Image/Build/$(1), $(1),ARV7519RWV11)
+
+Image/BuildKernel/Profile/ARV7519RWV12=$(call Image/BuildKernel/Template,ARV7519RWV12,$(1))
+Image/Build/Profile/ARV7519RWV12=$(call Image/Build/$(1), $(1),ARV7519RWV12)
+
 endif
 
 
 ifeq ($(CONFIG_TARGET_lantiq_xrx200),y)
 
 # VR9
+Image/BuildKernel/Profile/P2812HNUFX=$(call Image/BuildKernel/Template,P2812HNUFX)
+Image/InstallKernel/Template/P2812HNUFX=$(call Image/InstallKernel/Template,P2812HNUFX)
+Image/Build/Profile/P2812HNUFX=$(call Image/Build/$(1),$(1),P2812HNUFX)
+
 Image/BuildKernel/Profile/EASY80920NAND=$(call Image/BuildKernel/Template,EASY80920NAND)
 Image/Build/Profile/EASY80920NAND=$(call Image/Build/$(1),$(1),EASY80920NAND)
 
@@ -305,6 +357,10 @@ endif
 
 define Image/BuildKernel
 	$(call Image/BuildKernel/Profile/$(PROFILE))
+endef
+
+define Image/InstallKernel
+	$(call Image/InstallKernel/Template/$(PROFILE))
 endef
 
 define Image/Build
