@@ -8,21 +8,21 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-#PKG_VERSION:=2.69test8
+#PKG_VERSION:=2.69rc1
 #PKG_RELEASE:=1
 
-#PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-#PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq/test-releases/
-#PKG_MD5SUM:=03431d637301861ed13a4f5d7fc9be682bf28c71
+#PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+#PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq/release-candidates/
+#PKG_MD5SUM:=70b9757d1243ed35cab6ccbd59a6f835
 
-PKG_VERSION:=2014-03-21
+PKG_VERSION:=2014-03-29
+PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=git://thekelleys.org.uk/dnsmasq.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=2b29191e7c6dcfd262997bdaf7bc8c6d539efa87
-PKG_RELEASE=$(PKG_SOURCE_VERSION)
+PKG_SOURCE_VERSION:=b7639d58158c6e971535893b407560e136a27994
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=COPYING
@@ -89,6 +89,7 @@ MAKE_FLAGS := \
 define Package/dnsmasq/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/dnsmasq $(1)/usr/sbin/
+	$(INSTALL_BIN) ./files/check_ntpd.sh $(1)/usr/sbin/dnsmasq-checkntp
 	$(INSTALL_DIR) $(1)/usr/share/dnsmasq
 	$(CP) $(PKG_BUILD_DIR)/trust-anchors.conf $(1)/usr/share/dnsmasq/trust-anchors.conf
 	$(INSTALL_DIR) $(1)/etc/config
