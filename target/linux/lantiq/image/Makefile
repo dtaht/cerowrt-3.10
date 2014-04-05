@@ -6,12 +6,13 @@
 #
 
 # boards missing since devicetree update
-#EASY50712 ARV3527P BTHOMEHUBV2B BTHOMEHUBV2BOPENRG
+#EASY50712 ARV3527P
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 JFFS2_BLOCKSIZE = 64k 128k 256k
+NAND_BLOCKSIZE = 512:16k
 
 LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
 
@@ -54,10 +55,10 @@ define TPLinkImageLzma
 endef
 
 define MkImageEVA
-	lzma2eva 0x80002000 0x80002000 $(KDIR)/vmlinux-$(1).lzma $(KDIR)/$(1).eva.prealign
-	dd if=$(KDIR)/$(1).eva.prealign of=$(KDIR)/$(1).eva.align.64k bs=64k conv=sync
-	dd if=$(KDIR)/$(1).eva.prealign of=$(KDIR)/$(1).eva.align.128k bs=128k conv=sync
-	cat ./eva.dummy.squashfs >> $(KDIR)/$(1).eva.align.64k
+	lzma2eva 0x80002000 0x80002000 $(KDIR)/vmlinux$(2)-$(1).lzma $(KDIR)/$(1)$(2).eva.prealign
+	dd if=$(KDIR)/$(1)$(2).eva.prealign of=$(KDIR)/$(1)$(2).eva.align.64k bs=64k conv=sync
+	dd if=$(KDIR)/$(1)$(2).eva.prealign of=$(KDIR)/$(1)$(2).eva.align.128k bs=128k conv=sync
+	cat ./eva.dummy.squashfs >> $(KDIR)/$(1)$(2).eva.align.64k
 endef
 
 define CompressGzip
@@ -93,6 +94,21 @@ define Image/BuildEVA/squashfs
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image.eva)
 endef
 
+define Image/BuildEVA/ubifs
+
+ifneq ($($(PROFILE)_UBIFS_OPTS),)
+	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubifs
+endif
+endef
+
+define Image/BuildEVA/ubi
+
+ifneq ($($(PROFILE)_UBI_OPTS),)
+	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubi
+	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs-overlay.ubi
+endif
+endef
+
 define Image/BuildLoader/squashfs
 	dd if=$(KDIR)/loader-$(2).bin of=$(KDIR)/loader-$(2).bin.padded bs=1536k conv=sync
 	cat $(KDIR)/loader-$(2).bin.padded $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
@@ -115,6 +131,13 @@ endef
 
 define Image/Build/jffs2-256k
 	dd if=$(KDIR)/uImage-$(2) of=$(KDIR)/uImage-$(2)-$(1) bs=256k conv=sync
+	cat $(KDIR)/uImage-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
+endef
+
+define Image/Build/jffs2-nand-512-16k
+	dd if=$(KDIR)/uImage-$(2) of=$(KDIR)/uImage-$(2)-$(1) bs=16k conv=sync
+	$(CP) $(KDIR)/uImage-$(2)-$(1) $(BIN_DIR)/uImage-$(2)-$(1)
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/root-$(2)-$(1)
 	cat $(KDIR)/uImage-$(2)-$(1) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
 endef
 
@@ -197,6 +220,12 @@ define Image/BuildKernelEVA/Template
 	$(call MkImageEVA,$(1))
 	$(CP) $(KDIR)/$(1).eva.align.64k $(BIN_DIR)/$(IMG_PREFIX)-$(1).eva.align.64k
 	$(CP) $(KDIR)/$(1).eva.align.128k $(BIN_DIR)/$(IMG_PREFIX)-$(1).eva.align.128k
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(call PatchKernelLzma,$(1),-initramfs)
+	$(call MkImageEVA,$(1),-initramfs)
+	$(CP) $(KDIR)/$(1)-initramfs.eva.align.64k $(BIN_DIR)/$(IMG_PREFIX)-$(1)-initramfs.eva.align.64k
+	$(CP) $(KDIR)/$(1)-initramfs.eva.align.128k $(BIN_DIR)/$(IMG_PREFIX)-$(1)-initramfs.eva.align.128k
+endif
 endef
 
 define Image/BuildKernelGzip/Template
@@ -233,6 +262,9 @@ endif
 ifeq ($(CONFIG_TARGET_lantiq_xway),y)
 
 # Danube
+Image/BuildKernel/Profile/BTHOMEHUBV2B=$(call Image/BuildKernel/Template,BTHOMEHUBV2B)
+Image/Build/Profile/BTHOMEHUBV2B=$(call Image/Build/$(1),$(1),BTHOMEHUBV2B)
+
 Image/BuildKernel/Profile/EASY50712=$(call Image/BuildKernel/Template,EASY50712)
 Image/Build/Profile/EASY50712=$(call Image/Build/$(1),$(1),EASY50712)
 
