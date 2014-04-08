@@ -58,8 +58,10 @@ run_ramfs() { # <command> [...]
 		/bin/cut /usr/bin/printf /bin/sync
 
 	install_bin /sbin/mtd
-	install_bin /sbin/fs-state
+	install_bin /sbin/ubi
+	install_bin /sbin/mount_root
 	install_bin /sbin/snapshot
+	install_bin /sbin/snapshot_tool
 	install_bin /usr/sbin/ubiupdatevol
 	install_bin /usr/sbin/ubiattach
 	install_bin /usr/sbin/ubidetach
@@ -69,7 +71,7 @@ run_ramfs() { # <command> [...]
 	for file in $RAMFS_COPY_BIN; do
 		install_bin $file
 	done
-	install_file /etc/resolv.conf /lib/functions.sh /lib/functions.sh /lib/upgrade/*.sh $RAMFS_COPY_DATA
+	install_file /etc/resolv.conf /lib/functions.sh /lib/functions/*.sh /lib/upgrade/*.sh $RAMFS_COPY_DATA
 
 	supivot $RAM_ROOT /mnt || {
 		echo "Failed to switch over to ramfs. Please reboot."
