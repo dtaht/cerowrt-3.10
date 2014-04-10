@@ -12,7 +12,7 @@ PKG_VERSION:=2.69
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq/release-candidates/
+PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq/
 PKG_MD5SUM:=6994e1e26c351098d01faf9e4364d05e
 
 #PKG_VERSION:=2014-04-04
