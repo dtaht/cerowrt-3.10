@@ -2,6 +2,7 @@
  *  NETGEAR WNDR4300 board support
  *
  *  Copyright (C) 2012 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2014 Ralph Perlich <rpsoft@arcor.de>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -31,13 +32,14 @@
 #include "machtypes.h"
 
 #define WNDR4300_GPIO_LED_POWER_GREEN	0
-#define WNDR4300_GPIO_LED_POWER_ORANGE	2
+#define WNDR4300_GPIO_LED_POWER_AMBER	2
 #define WNDR4300_GPIO_LED_USB		13
 #define WNDR4300_GPIO_LED_WAN_GREEN	1
-#define WNDR4300_GPIO_LED_WAN_ORANGE	3
+#define WNDR4300_GPIO_LED_WAN_AMBER	3
+#define WNDR4300_GPIO_LED_WLAN2G	11
 #define WNDR4300_GPIO_LED_WLAN5G	14
 #define WNDR4300_GPIO_LED_WPS_GREEN	16
-#define WNDR4300_GPIO_LED_WPS_ORANGE	17
+#define WNDR4300_GPIO_LED_WPS_AMBER	17
 
 #define WNDR4300_GPIO_BTN_RESET		21
 #define WNDR4300_GPIO_BTN_WIRELESS	15
@@ -53,8 +55,8 @@ static struct gpio_led wndr4300_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "netgear:orange:power",
-		.gpio		= WNDR4300_GPIO_LED_POWER_ORANGE,
+		.name		= "netgear:amber:power",
+		.gpio		= WNDR4300_GPIO_LED_POWER_AMBER,
 		.active_low	= 1,
 	},
 	{
@@ -63,8 +65,8 @@ static struct gpio_led wndr4300_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "netgear:orange:wan",
-		.gpio		= WNDR4300_GPIO_LED_WAN_ORANGE,
+		.name		= "netgear:amber:wan",
+		.gpio		= WNDR4300_GPIO_LED_WAN_AMBER,
 		.active_low	= 1,
 	},
 	{
@@ -78,8 +80,13 @@ static struct gpio_led wndr4300_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "netgear:orange:wps",
-		.gpio		= WNDR4300_GPIO_LED_WPS_ORANGE,
+		.name		= "netgear:amber:wps",
+		.gpio		= WNDR4300_GPIO_LED_WPS_AMBER,
+		.active_low	= 1,
+	},
+	{
+		.name		= "netgear:green:wlan2g",
+		.gpio		= WNDR4300_GPIO_LED_WLAN2G,
 		.active_low	= 1,
 	},
 	{
@@ -109,7 +116,7 @@ static struct gpio_keys_button wndr4300_gpio_keys[] __initdata = {
 	{
 		.desc		= "Wireless button",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_RFKILL,
 		.debounce_interval = WNDR4300_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNDR4300_GPIO_BTN_WIRELESS,
 		.active_low	= 1,
@@ -154,6 +161,12 @@ static struct mdio_board_info wndr4300_mdio0_info[] = {
 
 static void __init wndr4300_setup(void)
 {
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(wndr4300_leds_gpio); i++)
+		ath79_gpio_output_select(wndr4300_leds_gpio[i].gpio,
+					 AR934X_GPIO_OUT_GPIO);
+
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wndr4300_leds_gpio),
 				 wndr4300_leds_gpio);
 	ath79_register_gpio_keys_polled(-1, WNDR4300_KEYS_POLL_INTERVAL,
