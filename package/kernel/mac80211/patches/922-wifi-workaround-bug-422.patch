@@ -1,0 +1,148 @@
+From cerowrt-devel-bounces@lists.bufferbloat.net Tue Apr 15 11:47:04 2014
+Return-Path: <cerowrt-devel-bounces@lists.bufferbloat.net>
+X-Original-To: dave.taht@bufferbloat.net
+Delivered-To: dave.taht@bufferbloat.net
+Received: from huchra.bufferbloat.net (unknown [IPv6:::1])
+	by huchra.bufferbloat.net (Postfix) with ESMTP id 7037B21F1F1;
+	Tue, 15 Apr 2014 11:47:01 -0700 (PDT)
+X-Original-To: cerowrt-devel@lists.bufferbloat.net
+Delivered-To: cerowrt-devel@lists.bufferbloat.net
+Received: from nbd.name (unknown [IPv6:2a01:4f8:131:30e2::2])
+	(using TLSv1 with cipher AES256-SHA (256/256 bits))
+	(Client did not present a certificate)
+	by huchra.bufferbloat.net (Postfix) with ESMTPS id 7A5D721F1E9;
+	Tue, 15 Apr 2014 11:46:59 -0700 (PDT)
+Message-ID: <534D7E99.4050909@openwrt.org>
+Date: Tue, 15 Apr 2014 20:46:49 +0200
+From: Felix Fietkau <nbd@openwrt.org>
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9;
+	rv:24.0) Gecko/20100101 Thunderbird/24.4.0
+MIME-Version: 1.0
+To: Dave Taht <dave.taht@gmail.com>, "cerowrt-devel@lists.bufferbloat.net"
+	<cerowrt-devel@lists.bufferbloat.net>, cerowrt@lists.bufferbloat.net
+References: <CAA93jw7Ej=b+GbnzQ_TxWZsRn8rtRXSK33Tp-Q9f7Cg=3+oehg@mail.gmail.com>
+In-Reply-To: <CAA93jw7Ej=b+GbnzQ_TxWZsRn8rtRXSK33Tp-Q9f7Cg=3+oehg@mail.gmail.com>
+X-Enigmail-Version: 1.6
+Subject: Re: [Cerowrt-devel] Fwd: [bug #422] ath9k queue hang
+X-BeenThere: cerowrt-devel@lists.bufferbloat.net
+X-Mailman-Version: 2.1.13
+Precedence: list
+List-Id: Development issues regarding the cerowrt test router project
+	<cerowrt-devel.lists.bufferbloat.net>
+List-Unsubscribe: <https://lists.bufferbloat.net/options/cerowrt-devel>,
+	<mailto:cerowrt-devel-request@lists.bufferbloat.net?subject=unsubscribe>
+List-Archive: <https://lists.bufferbloat.net/pipermail/cerowrt-devel>
+List-Post: <mailto:cerowrt-devel@lists.bufferbloat.net>
+List-Help: <mailto:cerowrt-devel-request@lists.bufferbloat.net?subject=help>
+List-Subscribe: <https://lists.bufferbloat.net/listinfo/cerowrt-devel>,
+	<mailto:cerowrt-devel-request@lists.bufferbloat.net?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: cerowrt-devel-bounces@lists.bufferbloat.net
+Errors-To: cerowrt-devel-bounces@lists.bufferbloat.net
+Status: RO
+Content-Length: 2941
+Lines: 101
+
+On 2014-04-15 06:06, Dave Taht wrote:
+> regrettably I am too wiped to look this over further right now, but the patchset
+> seems very promising.
+> 
+> I will review on a fresh brain in the morning. Other eyeballs desired
+> - this will have to get patched on top of 3.14 and then backported to
+> the 3.10 backport....
+The patch is a rather crude workaround which unfortunately will not
+help with narrowing down the cause. Also, doing a chip reset because a
+software queue is stuck is overkill.
+
+Please test if this patch helps. The tid->paused flag is no longer
+necessary since my rework of the tx path.
+---
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -254,7 +254,6 @@ struct ath_atx_tid {
+ 
+ 	s8 bar_index;
+ 	bool sched;
+-	bool paused;
+ 	bool active;
+ };
+ 
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -107,9 +107,6 @@ static void ath_tx_queue_tid(struct ath_
+ {
+ 	struct ath_atx_ac *ac = tid->ac;
+ 
+-	if (tid->paused)
+-		return;
+-
+ 	if (tid->sched)
+ 		return;
+ 
+@@ -1407,7 +1404,6 @@ int ath_tx_aggr_start(struct ath_softc *
+ 	ath_tx_tid_change_state(sc, txtid);
+ 
+ 	txtid->active = true;
+-	txtid->paused = true;
+ 	*ssn = txtid->seq_start = txtid->seq_next;
+ 	txtid->bar_index = -1;
+ 
+@@ -1427,7 +1423,6 @@ void ath_tx_aggr_stop(struct ath_softc *
+ 
+ 	ath_txq_lock(sc, txq);
+ 	txtid->active = false;
+-	txtid->paused = false;
+ 	ath_tx_flush_tid(sc, txtid);
+ 	ath_tx_tid_change_state(sc, txtid);
+ 	ath_txq_unlock_complete(sc, txq);
+@@ -1487,7 +1482,7 @@ void ath_tx_aggr_wakeup(struct ath_softc
+ 		ath_txq_lock(sc, txq);
+ 		ac->clear_ps_filter = true;
+ 
+-		if (!tid->paused && ath_tid_has_buffered(tid)) {
++		if (ath_tid_has_buffered(tid)) {
+ 			ath_tx_queue_tid(txq, tid);
+ 			ath_txq_schedule(sc, txq);
+ 		}
+@@ -1510,7 +1505,6 @@ void ath_tx_aggr_resume(struct ath_softc
+ 	ath_txq_lock(sc, txq);
+ 
+ 	tid->baw_size = IEEE80211_MIN_AMPDU_BUF << sta->ht_cap.ampdu_factor;
+-	tid->paused = false;
+ 
+ 	if (ath_tid_has_buffered(tid)) {
+ 		ath_tx_queue_tid(txq, tid);
+@@ -1544,8 +1538,6 @@ void ath9k_release_buffered_frames(struc
+ 			continue;
+ 
+ 		tid = ATH_AN_2_TID(an, i);
+-		if (tid->paused)
+-			continue;
+ 
+ 		ath_txq_lock(sc, tid->ac->txq);
+ 		while (nframes > 0) {
+@@ -1844,9 +1836,6 @@ void ath_txq_schedule(struct ath_softc *
+ 			list_del(&tid->list);
+ 			tid->sched = false;
+ 
+-			if (tid->paused)
+-				continue;
+-
+ 			if (ath_tx_sched_aggr(sc, txq, tid, &stop))
+ 				sent = true;
+ 
+@@ -2698,7 +2687,6 @@ void ath_tx_node_init(struct ath_softc *
+ 		tid->baw_size  = WME_MAX_BA;
+ 		tid->baw_head  = tid->baw_tail = 0;
+ 		tid->sched     = false;
+-		tid->paused    = false;
+ 		tid->active	   = false;
+ 		__skb_queue_head_init(&tid->buf_q);
+ 		__skb_queue_head_init(&tid->retry_q);
+
+_______________________________________________
+Cerowrt-devel mailing list
+Cerowrt-devel@lists.bufferbloat.net
+https://lists.bufferbloat.net/listinfo/cerowrt-devel
+
