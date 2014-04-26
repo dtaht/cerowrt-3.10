@@ -23,6 +23,7 @@ platform_check_image() {
 	all0256n | \
 	all5002 | \
 	all5003 | \
+	ar725w | \
 	asl26555 | \
 	awm002-evb | \
 	bc2 | \
@@ -61,6 +62,7 @@ platform_check_image() {
 	omni-emb | \
 	omni-emb-hpm | \
 	psr-680w | \
+	px4885 | \
 	rp-n53 | \
 	rt-g32-b1 | \
 	rt-n10-plus | \

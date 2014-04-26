@@ -12,6 +12,9 @@ get_status_led() {
 	3g300m | w150m)
 		status_led="tenda:blue:ap"
 		;;
+	ar725w)
+		status_led="ar725w:green:power"
+		;;
 	argus-atp52b)
 		status_led="argus-atp52b:green:run"
 		;;
@@ -88,6 +91,9 @@ get_status_led() {
 		;;
 	pwh2004)
 		status_led="pwh2004:green:power"
+		;;
+	px4885)
+		status_led="7links:orange:wifi"
 		;;
 	rt-n15)
 		status_led="rt-n15:blue:power"

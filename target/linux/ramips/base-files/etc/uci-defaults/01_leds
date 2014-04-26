@@ -35,6 +35,9 @@ case $board in
 		ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "all0256n:green:rssihigh" "wlan0" "70" "100" "-69" "8"
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;
+	ar725w)
+		set_wifi_led "rt2800soc-phy0::radio"
+		;;
 	asl26555)
 		ucidef_set_led_default "power" "POWER" "asl26555:green:power" "1"
 		ucidef_set_led_netdev "eth" "ETH" "asl26555:green:eth" "eth0"
@@ -125,6 +128,10 @@ case $board in
 		ucidef_set_led_default "power" "POWER" "emb:orange:power" "1"
 		ucidef_set_led_netdev "eth" "ETH" "emb:green:eth" "eth0"
 		set_wifi_led "emb:green:wifi"
+		;;
+	px4885)
+		set_wifi_led "7links:orange:wifi"
+		set_usb_led "7links:blue:storage"
 		;;
 	sl-r7205)
 		set_wifi_led "rt2800pci-phy0::radio"

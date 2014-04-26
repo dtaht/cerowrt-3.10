@@ -257,9 +257,21 @@ define BuildFirmware/PorayDualSize/squashfs
 endef
 BuildFirmware/PorayDualSize/initramfs=$(call BuildFirmware/DefaultDualSize/initramfs,$(1),$(2),$(3))
 
+define BuildFirmware/Gemtek/squashfs
+	$(call BuildFirmware/Default4M/$(1),$(1),$(2),$(3))
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		mkheader_gemtek "$(call sysupname,$(1),$(2))" \
+			"$(call imgname,$(1),$(2))-factory.bin" $(2) || \
+		rm -f "$(call imgname,$(1),$(2))-factory.bin"; \
+	fi
+endef
+BuildFirmware/Gemtek/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
+
 #
 # RT288X Profiles
 #
+
+Image/Build/Profile/AR725W=$(call BuildFirmware/Gemtek/$(1),$(1),ar725w,AR725W)
 
 # 0x790000
 belkin_f5d8235v1_mtd_size=7929856
@@ -273,6 +285,7 @@ Image/Build/Profile/WLITX4AG300N=$(call BuildFirmware/Default4M/$(1),$(1),wli-tx
 
 ifeq ($(SUBTARGET),rt288x)
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/AR725W,$(1))
 	$(call Image/Build/Profile/F5D8235V1,$(1))
 	$(call Image/Build/Profile/RTN15,$(1))
 	$(call Image/Build/Profile/V11STFE,$(1))
@@ -435,6 +448,8 @@ Image/Build/Profile/PSR-680W=$(call BuildFirmware/Default4M/$(1),$(1),psr-680w,P
 
 Image/Build/Profile/PWH2004=$(call BuildFirmware/Default8M/$(1),$(1),pwh2004,PWH2004)
 
+Image/Build/Profile/PX4885=$(call BuildFirmware/Default4M/$(1),$(1),px4885,PX4885)
+
 Image/Build/Profile/RTG32B1=$(call BuildFirmware/Default4M/$(1),$(1),rt-g32-b1,RT-G32-B1)
 
 Image/Build/Profile/RTN10PLUS=$(call BuildFirmware/Default4M/$(1),$(1),rt-n10-plus,RT-N10-PLUS)
@@ -572,6 +587,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/OMNI-EMB,$(1))
 	$(call Image/Build/Profile/PSR-680W,$(1))
 	$(call Image/Build/Profile/PWH2004,$(1))
+	$(call Image/Build/Profile/PX4885,$(1))
 	$(call Image/Build/Profile/RTG32B1,$(1))
 	$(call Image/Build/Profile/RTN10PLUS,$(1))
 	$(call Image/Build/Profile/RT-N13U,$(1))
