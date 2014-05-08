@@ -39,6 +39,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_MAC80211_DEBUGFS \
 	CONFIG_PACKAGE_MAC80211_MESH \
 	CONFIG_PACKAGE_ATH_DEBUG \
+	CONFIG_PACKAGE_ATH_DFS \
 	CONFIG_PACKAGE_B43_DEBUG \
 	CONFIG_PACKAGE_B43_PIO \
 	CONFIG_PACKAGE_B43_N_PHY \
@@ -464,6 +465,7 @@ endef
 define KernelPackage/rtl8192cu/install
 	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw.bin $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw_TMSC.bin $(1)/lib/firmware/rtlwifi
 endef
 
 ZD1211FW_NAME:=zd1211-firmware
@@ -509,6 +511,16 @@ define KernelPackage/ath/config
 		help
 		  Say Y, if you want to debug atheros wireless drivers.
 		  Right now only ath9k makes use of this.
+
+	config PACKAGE_ATH_DFS
+		bool "Enable DFS support"
+		help
+		  Dynamic frequency selection (DFS) is required for most of the 5 GHz band
+		  channels in Europe, US, and Japan.
+
+		  Select this option if you want to use such channels. Only EU (ETSI) DFS
+		  is supported at the moment.
+
   endif
 endef
 
@@ -1355,6 +1367,7 @@ config-y:= \
 	NL80211_TESTMODE \
 	CFG80211_WEXT \
 	CFG80211_INTERNAL_REGDB \
+	CFG80211_CERTIFICATION_ONUS \
 	MAC80211_RC_MINSTREL \
 	MAC80211_RC_MINSTREL_HT \
 	MAC80211_RC_DEFAULT_MINSTREL \
@@ -1378,6 +1391,7 @@ config-$(call config_package,lib80211) += LIB80211 LIB80211_CRYPT_WEP LIB80211_C
 
 config-$(call config_package,ath) += ATH_CARDS ATH_COMMON
 config-$(CONFIG_PACKAGE_ATH_DEBUG) += ATH_DEBUG ATH10K_DEBUG
+config-$(CONFIG_PACKAGE_ATH_DFS) += ATH9K_DFS_CERTIFIED ATH10K_DFS_CERTIFIED
 
 config-$(call config_package,ath9k) += ATH9K
 config-$(call config_package,ath9k-common) += ATH9K_COMMON
