@@ -1,0 +1,13 @@
+diff --git a/drivers/net/wireless/ath/ath9k/xmit.c b/drivers/net/wireless/ath/ath9k/xmit.c
+index 55897d5..dc2517e 100644
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -163,7 +163,7 @@ static void ath_txq_skb_done(struct ath_softc *sc, struct ath_txq *txq,
+ 		txq->pending_frames = 0;
+ 
+ 	if (txq->stopped &&
+-	    txq->pending_frames < sc->tx.txq_max_pending[q]) {
++	    txq->pending_frames <= sc->tx.txq_max_pending[q]) {
+ 		ieee80211_wake_queue(sc->hw, q);
+ 		txq->stopped = false;
+ 	}
