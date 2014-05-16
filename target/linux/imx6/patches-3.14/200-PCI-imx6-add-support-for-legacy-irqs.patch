@@ -13,7 +13,7 @@ upstream.
 
 --- a/drivers/pci/host/pcie-designware.c
 +++ b/drivers/pci/host/pcie-designware.c
-@@ -711,7 +711,26 @@ static int dw_pcie_map_irq(const struct
+@@ -739,7 +739,26 @@ static int dw_pcie_map_irq(const struct
  {
  	struct pcie_port *pp = sys_to_pcie(dev->bus->sysdata);
  
