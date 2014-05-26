@@ -10,11 +10,11 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2014-03-31
+PKG_VERSION:=2014-05-22
 PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_BACKPORT_VERSION:=
-PKG_MD5SUM:=8b5cf82d6defc5867511014af4afc0b6
+PKG_MD5SUM:=367937d4f8c05cb36ca989ee26abc3df
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION)$(PKG_BACKPORT_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -357,8 +357,8 @@ define KernelPackage/rtl8180
   $(call KernelPackage/rtl818x/Default)
   DEPENDS+= @PCI_SUPPORT
   TITLE+= (RTL8180 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8180/rtl8180.ko
-  AUTOLOAD:=$(call AutoProbe,rtl8180)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8180/rtl818x_pci.ko
+  AUTOLOAD:=$(call AutoProbe,rtl818x_pci)
 endef
 
 define KernelPackage/rtl8187
@@ -370,15 +370,12 @@ $(call KernelPackage/rtl818x/Default)
 endef
 
 define KernelPackage/rtlwifi/config
-	menu "Configuration"
-		depends on PACKAGE_kmod-rtlwifi
-
 	config PACKAGE_RTLWIFI_DEBUG
 		bool "Realtek wireless debugging"
+		depends on PACKAGE_kmod-rtlwifi
 		help
 		  Say Y, if you want to debug realtek wireless drivers.
 
-	endmenu
 endef
 
 define KernelPackage/rtlwifi
@@ -386,7 +383,7 @@ define KernelPackage/rtlwifi
   TITLE:=Realtek common driver part
   DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-mac80211 +@DRIVER_11N_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtlwifi.ko
-  MENU:=1
+  HIDDEN:=1
 endef
 
 define KernelPackage/rtlwifi-pci
@@ -573,6 +570,14 @@ endef
 define KernelPackage/ath9k/description
 This module adds support for wireless adapters based on
 Atheros IEEE 802.11n AR5008 and AR9001 family of chipsets.
+endef
+
+define KernelPackage/ath9k/config
+
+	config ATH9K_SUPPORT_PCOEM
+		bool "Support chips used in PC OEM cards"
+		depends on PACKAGE_kmod-ath9k
+	
 endef
 
 define KernelPackage/ath9k-htc
@@ -1398,6 +1403,7 @@ config-$(call config_package,ath9k-common) += ATH9K_COMMON
 config-$(CONFIG_TARGET_ar71xx) += ATH9K_AHB
 config-$(CONFIG_PCI) += ATH9K_PCI
 config-$(CONFIG_ATH_USER_REGD) += ATH_USER_REGD
+config-$(CONFIG_ATH9K_SUPPORT_PCOEM) += ATH9K_PCOEM
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
 config-$(call config_package,ath10k) += ATH10K ATH10K_PCI
