@@ -1070,7 +1070,7 @@ define KernelPackage/b43
   URL:=http://linuxwireless.org/en/users/Drivers/b43
   KCONFIG:= \
   	CONFIG_HW_RANDOM=y
-  DEPENDS+= +kmod-mac80211 +!TARGET_brcm47xx:kmod-bcma +!(TARGET_brcm47xx||TARGET_brcm63xx):kmod-ssb
+  DEPENDS+= +kmod-mac80211 +!(TARGET_brcm47xx||TARGET_brcm63xx):kmod-ssb
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/b43/b43.ko
   AUTOLOAD:=$(call AutoProbe,b43)
   MENU:=1
@@ -1178,6 +1178,11 @@ define KernelPackage/b43/config
 		  Example (keep files for G-PHY and N-PHY):
 		    G,N
 
+	config PACKAGE_B43_BUSES_BCMA
+		bool "Support for BCMA bus"
+		select PACKAGE_kmod-bcma if !TARGET_brcm47xx
+		default y
+
 	config PACKAGE_B43_DEBUG
 		bool "Enable debug output and debugfs for b43"
 		default n
@@ -1205,6 +1210,16 @@ define KernelPackage/b43/config
 		  SoC: BCM4716, BCM4717, BCM4718
 
 		  Currently only 11g speed is available.
+
+		  If unsure, say Y.
+
+	config PACKAGE_B43_PHY_LP
+		bool "Enable support for LP-PHYs"
+		default y
+		help
+		  Enable support for LP-PHY. This includes support for the following devices:
+		  PCI: BCM4312
+		  SoC: BCM5354
 
 		  If unsure, say Y.
 
@@ -1418,8 +1433,13 @@ endif
 config-$(call config_package,carl9170) += CARL9170
 
 config-$(call config_package,b43) += B43
-config-y += B43_SSB B43_BCMA B43_PHY_LP
+ifeq ($(CONFIG_PACKAGE_B43_BUSES_BCMA),y)
+config-y += B43_BUSES_BCMA_AND_SSB
+else
+config-y += B43_BUSES_SSB
+endif
 config-$(CONFIG_PACKAGE_B43_PHY_N) += B43_PHY_N
+config-$(CONFIG_PACKAGE_B43_PHY_LP) += B43_PHY_LP
 config-$(CONFIG_PACKAGE_B43_PHY_HT) += B43_PHY_HT
 config-$(CONFIG_PACKAGE_B43_PIO) += B43_PIO
 config-$(CONFIG_PACKAGE_B43_DEBUG) += B43_DEBUG

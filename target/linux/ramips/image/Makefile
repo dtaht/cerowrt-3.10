@@ -162,7 +162,8 @@ BuildFirmware/Edimax/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
 
 # build Seama header images
 define BuildFirmware/Seama/squashfs
-	$(call BuildFirmware/OF,$(1),$(2),$(3),$(5))
+	$(call MkImageLzmaDtb,$(2),$(3),$(5))
+	$(eval output_name=$(IMG_PREFIX)-$(2)-$(1)-sysupgrade.bin)
 	cat $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/root.$(1) > $(KDIR)/img_$(2).$(1).tmp
 	if [ `stat -c%s "$(KDIR)/img_$(2).$(1).tmp"` -gt $$$$(($(5) - 64)) ]; then \
 		echo "Warning: $(KDIR)/img_$(2).$(1).tmp is too big" >&2; \
@@ -179,6 +180,14 @@ define BuildFirmware/Seama/squashfs
 			-s $(call imgname,$(1),$(2))-factory.bin \
 			-m "signature=$(4)" \
 			-i $(KDIR)/vmlinux-$(2).tmp.seama; \
+		dd if=$(KDIR)/vmlinux-$(2).bin.lzma.padded bs=1 count=`expr \`stat -c%s $(KDIR)/vmlinux-$(2).bin.lzma.padded\` - 64` of=$(KDIR)/vmlinux-$(2)-sysupgrade.tmp; \
+		$(STAGING_DIR_HOST)/bin/seama \
+			-i $(KDIR)/vmlinux-$(2)-sysupgrade.tmp \
+			-m "dev=/dev/mtdblock/2" -m "type=firmware"; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2)-sysupgrade.tmp.seama; \
+			dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
+		) > $(BIN_DIR)/$(output_name); \
 	fi
 endef
 BuildFirmware/Seama/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
@@ -454,6 +463,8 @@ Image/Build/Profile/RTG32B1=$(call BuildFirmware/Default4M/$(1),$(1),rt-g32-b1,R
 
 Image/Build/Profile/RTN10PLUS=$(call BuildFirmware/Default4M/$(1),$(1),rt-n10-plus,RT-N10-PLUS)
 
+Image/Build/Profile/RUT5XX=$(call BuildFirmware/Default8M/$(1),$(1),rut5xx,RUT5XX)
+
 Image/Build/Profile/SL-R7205=$(call BuildFirmware/Default4M/$(1),$(1),sl-r7205,SL-R7205)
 
 Image/Build/Profile/V22RW-2X2=$(call BuildFirmware/Default4M/$(1),$(1),v22rw-2x2,V22RW-2X2)
@@ -591,6 +602,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/RTG32B1,$(1))
 	$(call Image/Build/Profile/RTN10PLUS,$(1))
 	$(call Image/Build/Profile/RT-N13U,$(1))
+	$(call Image/Build/Profile/RUT5XX,$(1))
 	$(call Image/Build/Profile/SL-R7205,$(1))
 	$(call Image/Build/Profile/UR-326N4G,$(1))
 	$(call Image/Build/Profile/V22RW-2X2,$(1))
@@ -644,6 +656,8 @@ define BuildFirmware/EdimaxCombined/squashfs
 		-s $(6) -m $(7) -f $(8) -S $(9)
 endef
 
+Image/Build/Profile/CYSWR1100=$(call BuildFirmware/Seama/$(1),$(1),cy-swr1100,CY-SWR1100,wrgnd10_samsung_ss815,$(ralink_default_fw_size_8M))
+
 Image/Build/Profile/DIR645=$(call BuildFirmware/Seama/$(1),$(1),dir-645,DIR-645,wrgn39_dlob.hans_dir645,$(ralink_default_fw_size_8M))
 
 omniembhpm_mtd_size=16449536
@@ -661,6 +675,7 @@ Image/Build/Profile/BR6475ND=$(call BuildFirmware/EdimaxCombined/$(1),$(1),br-64
 
 ifeq ($(SUBTARGET),rt3883)
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/CYSWR1100,$(1))
 	$(call Image/Build/Profile/DIR645,$(1))
 	$(call Image/Build/Profile/OMNIEMBHPM,$(1))
 	$(call Image/Build/Profile/RTN56U,$(1))

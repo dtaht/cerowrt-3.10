@@ -27,6 +27,9 @@ get_status_led() {
 	br6425 | br-6475nd)
 		status_led="edimax:green:power"
 		;;
+	cy-swr1100)
+		status_led="samsung:blue:wps"
+		;;
 	d105)
 		status_led="d105:red:power"
 		;;
@@ -103,6 +106,9 @@ get_status_led() {
 		;;
 	rt-n56u | wl-330n | wl-330n3g)
 		status_led="asus:blue:power"
+		;;
+	rut5xx)
+		status_led="rut5xx:green:status"
 		;;
 	sl-r7205)
 		status_led="sl-r7205:green:status"

@@ -48,6 +48,7 @@ get_status_led() {
 		;;
 	dir-505-a1 |\
 	dir-600-a1 |\
+	dir-615-e1 |\
 	dir-615-e4)
 		status_led="d-link:green:power"
 		;;
@@ -63,6 +64,9 @@ get_status_led() {
 		;;
 	eap7660d)
 		status_led="eap7660d:green:ds4"
+		;;
+	hiwifi-hc6361)
+		status_led="hiwifi:blue:system"
 		;;
 	hornet-ub)
 		status_led="alfa:blue:wps"
@@ -98,7 +102,9 @@ get_status_led() {
 		status_led="nbg6716:white:power"
 		;;
 	om2p | \
+	om2pv2 | \
 	om2p-hs | \
+	om2p-hsv2 | \
 	om2p-lc)
 		status_led="om2p:blue:power"
 		;;

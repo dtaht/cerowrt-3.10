@@ -11,7 +11,7 @@ platform_check_image() {
 	local board=$(ramips_board_name)
 	local magic="$(get_magic_long "$1")"
 
-	[ "$ARGC" -gt 1 ] && return 1
+	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
 	3g-6200n | \
@@ -69,6 +69,7 @@ platform_check_image() {
 	rt-n14u | \
 	rt-n15 | \
 	rt-n56u | \
+	rut5xx | \
 	sl-r7205 | \
 	tew-691gr | \
 	tew-692gr | \
@@ -96,6 +97,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	cy-swr1100 |\
 	dir-610-a1 |\
 	dir-645)
 		[ "$magic" != "5ea3a417" ] && {
