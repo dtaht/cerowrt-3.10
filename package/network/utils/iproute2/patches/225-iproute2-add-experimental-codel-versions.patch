@@ -1,32 +1,32 @@
-From e015b570436df5807a2e3e3ee7285c2de3693b1e Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Dave=20T=C3=A4ht?= <dave.taht@bufferbloat.net>
-Date: Tue, 18 Sep 2012 12:42:31 -0700
-Subject: [PATCH] iproute2: add experimental codel versions
+From 2f7ab132674d6075b2c3f26ff4bdefe069d220d2 Mon Sep 17 00:00:00 2001
+From: Dave Taht <dave.taht@bufferbloat.net>
+Date: Tue, 17 Jun 2014 13:11:23 -0700
+Subject: [PATCH] Add experimental codel and fq_codel versions
 
 ---
- tc/Makefile      |    3 +
- tc/q_efq_codel.c |  232 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- tc/q_nfq_codel.c |  232 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- tc/q_ns2_codel.c |  188 +++++++++++++++++++++++++++++++++++++++++++
+ tc/Makefile      |   3 +
+ tc/q_efq_codel.c | 232 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tc/q_nfq_codel.c | 232 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tc/q_ns2_codel.c | 188 ++++++++++++++++++++++++++++++++++++++++++++
  4 files changed, 655 insertions(+)
  create mode 100644 tc/q_efq_codel.c
  create mode 100644 tc/q_nfq_codel.c
  create mode 100644 tc/q_ns2_codel.c
 
 diff --git a/tc/Makefile b/tc/Makefile
-index d831b9c..799f1c0 100644
+index 1ab36c6..7780ef0 100644
 --- a/tc/Makefile
 +++ b/tc/Makefile
-@@ -50,6 +50,9 @@ TCMODULES += em_meta.o
+@@ -50,6 +50,9 @@ TCMODULES += em_u32.o
+ TCMODULES += em_canid.o
+ TCMODULES += em_meta.o
  TCMODULES += q_mqprio.o
++TCMODULES += q_ns2_codel.o
++TCMODULES += q_efq_codel.o
++TCMODULES += q_nfq_codel.o
  TCMODULES += q_codel.o
  TCMODULES += q_fq_codel.o
-+TCMODULES += q_ns2_codel.o
-+TCMODULES += q_efq_codel.o  
-+TCMODULES += q_nfq_codel.o
- TCMODULES += q_pie.o
-
- ifeq ($(TC_CONFIG_IPSET), y)
+ TCMODULES += q_fq.o
 diff --git a/tc/q_efq_codel.c b/tc/q_efq_codel.c
 new file mode 100644
 index 0000000..b80e5e4
@@ -505,7 +505,7 @@ index 0000000..ef24909
 +};
 diff --git a/tc/q_ns2_codel.c b/tc/q_ns2_codel.c
 new file mode 100644
-index 0000000..190e683
+index 0000000..223a971
 --- /dev/null
 +++ b/tc/q_ns2_codel.c
 @@ -0,0 +1,188 @@
@@ -698,5 +698,5 @@ index 0000000..190e683
 +	.print_xstats	= codel_print_xstats,
 +};
 -- 
-1.7.9.5
+1.9.1
 
