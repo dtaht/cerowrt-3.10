@@ -101,6 +101,7 @@ MAKE_FLAGS := \
 define Package/dnsmasq/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/dnsmasq $(1)/usr/sbin/
+	$(INSTALL_BIN) ./files/check_ntpd.sh $(1)/usr/sbin/dnsmasq-checkntp
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/dhcp.conf $(1)/etc/config/dhcp
 	$(INSTALL_DATA) ./files/dnsmasq.conf $(1)/etc/dnsmasq.conf
