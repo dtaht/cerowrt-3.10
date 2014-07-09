@@ -224,6 +224,8 @@ platform_check_image() {
 		;;
 
 	archer-c7 | \
+	el-m150 | \
+	el-mini | \
 	oolite | \
 	tl-mr10u | \
 	tl-mr11u | \
@@ -305,6 +307,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	nbg6716 | \
 	wndr4300 )
 		nand_do_platform_check $board $1
 		return $?;

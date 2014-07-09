@@ -65,6 +65,10 @@ get_status_led() {
 	eap7660d)
 		status_led="eap7660d:green:ds4"
 		;;
+	el-mini | \
+	el-m150)
+		status_led="EasyLink:green:system"
+		;;
 	hiwifi-hc6361)
 		status_led="hiwifi:blue:system"
 		;;
@@ -130,6 +134,10 @@ get_status_led() {
 		;;
 	rb-951ui-2hnd)
 		status_led="rb:green:act"
+		;;
+	rb-sxt2n|\
+	rb-sxt5n)
+		status_led="rb:green:power"
 		;;
 	routerstation | routerstation-pro)
 		status_led="ubnt:green:rf"

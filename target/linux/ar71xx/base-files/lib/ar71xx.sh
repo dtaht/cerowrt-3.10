@@ -91,6 +91,12 @@ tplink_board_detect() {
 	hwver="v${hwver#0}"
 
 	case "$hwid" in
+	"015000"*)
+		model="EasyLink EL-M150"
+		;;
+	"015300"*)
+		model="EasyLink EL-MINI"
+		;;
 	"3C0001"*)
 		model="OOLITE"
 		;;
@@ -307,6 +313,12 @@ ar71xx_board_detect() {
 	*EAP7660D)
 		name="eap7660d"
 		;;
+	*EL-M150)
+		name="el-m150"
+		;;
+	*EL-MINI)
+		name="el-mini"
+		;;
 	*JA76PF)
 		name="ja76pf"
 		;;
@@ -453,6 +465,12 @@ ar71xx_board_detect() {
 		;;
 	*"RouterBOARD 2011UAS-2HnD")
 		name="rb-2011uas-2hnd"
+		;;
+	*"RouterBOARD SXT Lite2")
+		name="rb-sxt2n"
+		;;
+	*"RouterBOARD SXT Lite5")
+		name="rb-sxt5n"
 		;;
 	*"Rocket M")
 		name="rocket-m"

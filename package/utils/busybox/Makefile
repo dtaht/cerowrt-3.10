@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2013 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
 PKG_VERSION:=1.22.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -19,6 +19,7 @@ PKG_MD5SUM:=337d1a15ab1cb1d4ed423168b1eb7d7e
 
 PKG_BUILD_DEPENDS:=BUSYBOX_USE_LIBRPC:librpc
 PKG_BUILD_PARALLEL:=1
+PKG_CHECK_FORMAT_SECURITY:=0
 
 PKG_LICENSE:=GPLv2 BSD-4c
 PKG_LICENSE_FILES:=LICENSE archival/libarchive/bz/LICENSE

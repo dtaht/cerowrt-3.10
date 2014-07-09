@@ -1,7 +1,6 @@
 #!/bin/sh
 
 ubootenv=""
-nokernel=""
 ubinize_param=""
 kernel=""
 rootfs=""
@@ -57,40 +56,39 @@ ubilayout() {
 }
 
 while [ "$1" ]; do
-	if [ "$1" = "--uboot-env" ]; then
+	case "$1" in
+	"--uboot-env")
 		ubootenv="ubootenv"
 		shift
 		continue
-	fi
-	if [ "$1" = "--no-kernel" ]; then
-		nokernel="nokernel"
+		;;
+	"--kernel")
+		kernel="$2"
+		shift
 		shift
 		continue
-	fi
-	if [ ! "$kernel" -a ! "$nokernel" ]; then
-		[ "${1:0:1}" = "-" ] && break
-		kernel=$1
-		shift
-		continue
-	fi
-	if [ ! "$rootfs" ]; then
-		[ "${1:0:1}" = "-" ] && break
-		rootfs=$1
-		shift
-		continue
-	fi
-	if [ ! "$outfile" ]; then
-		[ "${1:0:1}" = "-" ] && break
-		outfile=$1
-		shift
-		continue
-	fi
-	ubinize_param="$@"
-	break
+		;;
+	"-"*)
+		ubinize_param="$@"
+		break
+		;;
+	*)
+		if [ ! "$rootfs" ]; then
+			rootfs=$1
+			shift
+			continue
+		fi
+		if [ ! "$outfile" ]; then
+			outfile=$1
+			shift
+			continue
+		fi
+		;;
+	esac
 done
 
-if [ ! -r "$rootfs" -o ! -r "$kernel" -a ! "$nokernel" -o ! "$outfile" ]; then
-	echo "syntax: $0 [--no-kernel] [--uboot-env] rootfs [kernel] out [ubinize opts]"
+if [ ! -r "$rootfs" -o ! -r "$kernel" -a ! "$outfile" ]; then
+	echo "syntax: $0 [--uboot-env] [--kernel kernelimage] rootfs out [ubinize opts]"
 	exit 1
 fi
 
