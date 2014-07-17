@@ -160,6 +160,9 @@ ramips_board_detect() {
 	*"HAME MPR-A2")
  		name="mpr-a2"
  		;;
+	*"Planex MZK-750DHP")
+		name="mzk-750dhp"
+		;;
 	*"NBG-419N")
 		name="nbg-419n"
 		;;
@@ -309,6 +312,9 @@ ramips_board_detect() {
 		;;
 	*"Zbtlink ZBT-WA05")
 		name="zbt-wa05"
+		;;
+	*"ZBT WR8305RT")
+		name="wr8305rt"
 		;;
 	*)
 		name="generic"

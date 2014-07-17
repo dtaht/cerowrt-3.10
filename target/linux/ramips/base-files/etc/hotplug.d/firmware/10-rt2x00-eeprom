@@ -90,6 +90,7 @@ case "$FIRMWARE" in
 	mofi3500-3gn | \
 	mpr-a1 | \
 	mpr-a2 | \
+	mzk-750dhp | \
 	pwh2004 | \
 	ncs601w | \
 	nbg-419n | \
@@ -120,6 +121,7 @@ case "$FIRMWARE" in
 	wnce2001 | \
 	wr512-3gn | \
 	wr6202 | \
+	wr8305rt | \
 	wrtnode | \
 	mzk-w300nh2 | \
 	ur-326n4g | \
