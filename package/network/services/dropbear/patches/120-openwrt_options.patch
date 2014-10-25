@@ -29,15 +29,19 @@
  
  /* Enable "Counter Mode" for ciphers. This is more secure than normal
   * CBC mode against certain attacks. This adds around 1kB to binary 
-@@ -122,7 +122,7 @@ much traffic. */
+@@ -122,9 +122,9 @@ much traffic. */
   * If you disable MD5, Dropbear will fall back to SHA1 fingerprints,
   * which are not the standard form. */
  #define DROPBEAR_SHA1_HMAC
 -#define DROPBEAR_SHA1_96_HMAC
+-/*#define DROPBEAR_SHA2_256_HMAC*/
+-/*#define DROPBEAR_SHA2_512_HMAC*/
 +/*#define DROPBEAR_SHA1_96_HMAC*/
- /*#define DROPBEAR_SHA2_256_HMAC*/
- /*#define DROPBEAR_SHA2_512_HMAC*/
++#define DROPBEAR_SHA2_256_HMAC
++#define DROPBEAR_SHA2_512_HMAC
  #define DROPBEAR_MD5_HMAC
+
+ /* You can also disable integrity. Don't bother disabling this if you're
 @@ -175,7 +175,7 @@ much traffic. */
  
  /* Whether to print the message of the day (MOTD). This doesn't add much code
