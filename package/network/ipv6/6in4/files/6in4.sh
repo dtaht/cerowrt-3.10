@@ -69,6 +69,9 @@ proto_6in4_setup() {
 		local try=0
 		local max=3
 
+		# give time for dns resolvers and dnsmasq to reinitialize
+		sleep 10
+		
 		while [ $((++try)) -le $max ]; do
 			( exec wget -qO/dev/null "$url" 2>/dev/null ) &
 			local pid=$!
